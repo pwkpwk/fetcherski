@@ -3,15 +3,25 @@ using Microsoft.Extensions.Options;
 
 namespace fetcherski.database;
 
-public class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options) : IDatabase
+public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options) : IDatabase, IDisposable
 {
-    Task<QueryResult<string>> IDatabase.StartQuery(CancellationToken cancellation)
+    private readonly CancellationTokenSource _cts = new();
+
+    async Task<QueryResult<string>> IDatabase.StartQuery(CancellationToken cancellation)
     {
-        return Task.FromResult(new QueryResult<string>("continuation-token", [options.Value.CockroachKey]));
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
+        return new QueryResult<string>("continuation-token", [options.Value.CockroachKey]);
     }
 
-    Task<QueryResult<string>> IDatabase.ContinueQuery(string continuationToken, CancellationToken cancellation)
+    async Task<QueryResult<string>> IDatabase.ContinueQuery(string continuationToken, CancellationToken cancellation)
     {
-        return Task.FromResult(new QueryResult<string>(null, null));
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
+        return new QueryResult<string>(null, null);
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
     }
 }
