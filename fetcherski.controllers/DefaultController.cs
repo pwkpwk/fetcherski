@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace fetcherski.controllers;
 
-[Route("api")]
+[ApiController, Route("api")]
 public class DefaultController(IDatabase database) : Controller
 {
-    private const string ContinuationTokenHeader = "x-continuation-token";
+    private const string ContinuationTokenHeader = "X-Continuation-Token";
     
-    [HttpGet, Route("query")]
+    [HttpGet, Route("query"), Produces("application/json")]
     public async Task<string[]?> StartQuery(CancellationToken cancellation)
     {
         var result = await database.StartQuery(cancellation);
@@ -18,10 +18,10 @@ public class DefaultController(IDatabase database) : Controller
             Response.Headers[ContinuationTokenHeader] = result.ContinuationToken;
         }
         
-        return result.Data;
+        return result.Data ?? Array.Empty<string>();
     }
 
-    [HttpGet, Route("continue")]
+    [HttpGet, Route("continue"), Produces("application/json")]
     public async Task<string[]?> ContinueQuery(CancellationToken cancellation)
     {
         var tokens = Request.Headers[ContinuationTokenHeader];
@@ -40,6 +40,6 @@ public class DefaultController(IDatabase database) : Controller
             Response.Headers[ContinuationTokenHeader] = result.ContinuationToken;
         }
         
-        return result.Data;
+        return result.Data ?? Array.Empty<string>();
     }
 }
