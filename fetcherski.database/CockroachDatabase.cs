@@ -16,7 +16,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
     async Task<QueryResult<string>> IDatabase.ContinueQuery(string continuationToken, CancellationToken cancellation)
     {
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
-        return new QueryResult<string>(null, null);
+        return new QueryResult<string>(null, ["Second", "Page", "Is", "The", "Last", "One"]);
     }
 
     public void Dispose()
