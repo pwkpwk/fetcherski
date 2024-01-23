@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.service", "fetcherski.service\fetcherski.service.csproj", "{C63E10DE-2553-4F1E-A605-8013CFBCEC51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.controllers", "fetcherski.controllers\fetcherski.controllers.csproj", "{47F2F9F8-C0D4-40B7-BCD9-2D4F5BB45B07}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.database", "fetcherski.database\fetcherski.database.csproj", "{BAEACF16-B973-4016-93C5-FDFCF0BDD98A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C63E10DE-2553-4F1E-A605-8013CFBCEC51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C63E10DE-2553-4F1E-A605-8013CFBCEC51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C63E10DE-2553-4F1E-A605-8013CFBCEC51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C63E10DE-2553-4F1E-A605-8013CFBCEC51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47F2F9F8-C0D4-40B7-BCD9-2D4F5BB45B07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47F2F9F8-C0D4-40B7-BCD9-2D4F5BB45B07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47F2F9F8-C0D4-40B7-BCD9-2D4F5BB45B07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47F2F9F8-C0D4-40B7-BCD9-2D4F5BB45B07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAEACF16-B973-4016-93C5-FDFCF0BDD98A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAEACF16-B973-4016-93C5-FDFCF0BDD98A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAEACF16-B973-4016-93C5-FDFCF0BDD98A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAEACF16-B973-4016-93C5-FDFCF0BDD98A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
