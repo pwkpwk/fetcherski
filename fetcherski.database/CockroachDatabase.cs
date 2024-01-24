@@ -59,6 +59,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
             Database = _config.Database,
             Username = _config.User,
             Password = _config.Password,
+            SearchPath = _config.Schema,
             ApplicationName = "fetcherski.database",
             SslMode = SslMode.VerifyFull,
             Pooling = true
