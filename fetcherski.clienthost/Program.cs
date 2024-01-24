@@ -4,7 +4,7 @@ using fetcherski.client;
 
 var client = new Client(new Uri("https://localhost:7118/"));
 
-await foreach (var array in client.Query())
+await foreach (var array in client.Query(50))
 {
     foreach (var str in array)
     {
