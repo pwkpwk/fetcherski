@@ -11,8 +11,11 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // The double underscore in the names of environment variables is the hierarchy separator.
+        // The variable named "fetcherski.CockroachDB__Password" will provide value for the Password
+        // property in the CockroachDB section.
         builder.Configuration.AddEnvironmentVariables("fetcherski.");
-        builder.Services.Configure<CockroachConfig>(builder.Configuration);
+        builder.Services.Configure<CockroachConfig>(builder.Configuration.GetSection("CockroachDB"));
 
         // Add services to the container.
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
