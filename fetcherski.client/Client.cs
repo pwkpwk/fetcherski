@@ -1,21 +1,27 @@
 ﻿using System.Net;
+using System.Text;
 using System.Text.Json;
 
 namespace fetcherski.client;
 
 public class Client(Uri baseUri)
 {
-    public IAsyncEnumerable<string[]> Query(int pageSize) => new Enumerable(baseUri, pageSize);
+    public IAsyncEnumerable<string[]> Query(int pageSize, bool descending) =>
+        new Enumerable(baseUri, pageSize, descending);
 
-    private class Enumerable(Uri baseUri, int pageSize) : IAsyncEnumerable<string[]>
+    private class Enumerable(Uri baseUri, int pageSize, bool descending) : IAsyncEnumerable<string[]>
     {
         IAsyncEnumerator<string[]> IAsyncEnumerable<string[]>.GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new Enumerator(baseUri, pageSize, cancellationToken);
+            return new Enumerator(baseUri, pageSize, descending, cancellationToken);
         }
     }
 
-    private class Enumerator(Uri baseUri, int pageSize, CancellationToken cancellation) : IAsyncEnumerator<string[]>
+    private class Enumerator(
+        Uri baseUri,
+        int pageSize,
+        bool descending,
+        CancellationToken cancellation) : IAsyncEnumerator<string[]>
     {
         private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         private readonly HttpClient _client = new();
@@ -32,7 +38,13 @@ public class Client(Uri baseUri)
 
             if (_continuationToken is null)
             {
-                using HttpRequestMessage request = new(HttpMethod.Get, new Uri(baseUri, $"api/query?pageSize={pageSize}"));
+                StringBuilder query = new("api/query?pageSize=");
+                query.Append(pageSize);
+                if (descending)
+                {
+                    query.Append("&order=descending");
+                }
+                using HttpRequestMessage request = new(HttpMethod.Get, new Uri(baseUri, query.ToString()));
                 using var response = await _client.SendAsync(request, _cts.Token);
 
                 return await ProcessResponse(response);
