@@ -6,7 +6,7 @@ namespace fetcherski.client;
 
 public class Client(Uri baseUri)
 {
-    public record struct Item(Guid id, string description);
+    public record struct Item(Guid id, string description, long sid, DateTime timestamp);
 
     public IAsyncEnumerable<Item[]> QueryLooseItemsAsync(int pageSize, bool descending = false) =>
         new Enumerable(baseUri, "query-loose-items", pageSize, descending);

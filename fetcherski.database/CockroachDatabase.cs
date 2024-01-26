@@ -30,7 +30,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
     {
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
         var decodedToken = (await DecodeContinuationTokenAsync(continuationToken, cts.Token)).AsObject();
-        string table = decodedToken["tb"].GetValue<string>();
+        string table = decodedToken["q"].GetValue<string>();
         DateTime timestamp = new DateTime(decodedToken["t"].GetValue<long>());
         long sequentialId = decodedToken["s"].GetValue<long>();
         string sqlOrder = decodedToken["o"].GetValue<string>();
@@ -171,18 +171,19 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         CancellationToken cancellation)
     {
         var data = new List<Client.Item>(pageSize);
-        long sid = -1;
-        long ticks = -1;
+        long sid = default, ticks = default;
         int count = 0;
 
         while (count < pageSize && await reader.ReadAsync(cancellation))
         {
-            var id = reader.GetGuid(0);
-            var description = reader.GetString(3);
-            sid = reader.GetInt64(1);
-            ticks = reader.GetDateTime(2).Ticks;
-
-            data.Add(new Client.Item { id = id, description = description });
+            var item = new Client.Item(
+                reader.GetGuid(0),
+                reader.GetString(3),
+                reader.GetInt64(1),
+                reader.GetDateTime(2));
+            ticks = item.timestamp.Ticks;
+            sid = item.sid;
+            data.Add(item);
             count++;
         }
 
@@ -195,8 +196,8 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
 
             var tokenData = new JsonObject
             {
-                ["tb"] = table,
-                ["t"] = ticks,
+                ["q"] = table,
+                ["t"] = ticks, // timestamp of the last item on the returned page
                 ["s"] = sid, // sequential ID of the last item on the returned page
                 ["o"] = sqlOrder,
                 ["p"] = pageSize
