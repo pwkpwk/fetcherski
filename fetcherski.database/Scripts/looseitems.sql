@@ -6,5 +6,6 @@
     description   STRING(100) NOT NULL,
     CONSTRAINT looseitems_pkey PRIMARY KEY (id ASC),
     UNIQUE INDEX looseitems_sequential_id_index (sequential_id ASC),
-    INDEX         looseitems_created_index (created ASC)
+    INDEX looseitems_created_index (created ASC),
+    INDEX "looseitems_ordering_index" (created, sequential_id) STORING (description)
 )

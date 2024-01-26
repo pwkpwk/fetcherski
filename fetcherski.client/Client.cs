@@ -8,19 +8,27 @@ public class Client(Uri baseUri)
 {
     public record struct Item(Guid id, string description);
 
-    public IAsyncEnumerable<Item[]> Query(int pageSize, bool descending = false) =>
-        new Enumerable(baseUri, pageSize, descending);
+    public IAsyncEnumerable<Item[]> QueryLooseItemsAsync(int pageSize, bool descending = false) =>
+        new Enumerable(baseUri, "query-loose-items", pageSize, descending);
 
-    private class Enumerable(Uri baseUri, int pageSize, bool descending) : IAsyncEnumerable<Item[]>
+    public IAsyncEnumerable<Item[]> QueryPackItemsAsync(int pageSize, bool descending = false) =>
+        new Enumerable(baseUri, "query-pack-items", pageSize, descending);
+
+    private class Enumerable(
+        Uri baseUri,
+        string query,
+        int pageSize,
+        bool descending) : IAsyncEnumerable<Item[]>
     {
         IAsyncEnumerator<Item[]> IAsyncEnumerable<Item[]>.GetAsyncEnumerator(CancellationToken cancellationToken)
         {
-            return new Enumerator(baseUri, pageSize, descending, cancellationToken);
+            return new Enumerator(baseUri, query, pageSize, descending, cancellationToken);
         }
     }
 
     private class Enumerator(
         Uri baseUri,
+        string queryName,
         int pageSize,
         bool descending,
         CancellationToken cancellation) : IAsyncEnumerator<Item[]>
@@ -40,7 +48,9 @@ public class Client(Uri baseUri)
 
             if (_continuationToken is null)
             {
-                StringBuilder query = new("api/query?pageSize=");
+                StringBuilder query = new("api/");
+                query.Append(queryName);
+                query.Append("?pageSize=");
                 query.Append(pageSize);
                 if (descending)
                 {

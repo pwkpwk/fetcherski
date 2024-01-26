@@ -15,7 +15,45 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
     private readonly CockroachConfig _config = options.Value;
     private readonly CancellationTokenSource _cts = new();
 
-    async Task<QueryResult<Client.Item>> IDatabase.StartQuery(
+    Task<QueryResult<Client.Item>> IDatabase.QueryLooseItemsAsync(
+        int pageSize,
+        IDatabase.Order order,
+        CancellationToken cancellation) => QueryTableAsync("looseitems", pageSize, order, cancellation);
+
+    Task<QueryResult<Client.Item>> IDatabase.QueryPackItemsAsync(
+        int pageSize,
+        IDatabase.Order order,
+        CancellationToken cancellation) => QueryTableAsync("pack_contents_view", pageSize, order, cancellation);
+
+    async Task<QueryResult<Client.Item>> IDatabase.ContinueAsync(string continuationToken,
+        CancellationToken cancellation)
+    {
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
+        var decodedToken = (await DecodeContinuationTokenAsync(continuationToken, cts.Token)).AsObject();
+        string table = decodedToken["tb"].GetValue<string>();
+        DateTime timestamp = new DateTime(decodedToken["t"].GetValue<long>());
+        long sequentialId = decodedToken["s"].GetValue<long>();
+        string sqlOrder = decodedToken["o"].GetValue<string>();
+        int pageSize = decodedToken["p"].GetValue<int>();
+        await using var db = await OpenDatabaseAsync(cts.Token);
+        await using var reader = await OpenReaderAsyncAsync(db, table, timestamp, sqlOrder, pageSize, cancellation);
+
+        if (!await SkipReaderAsync(reader, sequentialId, cts.Token))
+        {
+            return new QueryResult<Client.Item>(null, null);
+        }
+
+        return await ProcessReaderAsync(reader, table, pageSize, sqlOrder, cts.Token);
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+
+    private async Task<QueryResult<Client.Item>> QueryTableAsync(
+        string table,
         int pageSize,
         IDatabase.Order order,
         CancellationToken cancellation)
@@ -24,37 +62,13 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         var sqlOrder = SqlOrderFromOrder(order);
         await using var db = await OpenDatabaseAsync(cts.Token);
         await using var reader = await OpenReaderAsyncAsync(db,
+            table,
             order == IDatabase.Order.Ascending ? DateTime.MinValue : DateTime.MaxValue,
             sqlOrder,
             pageSize,
             cancellation);
 
-        return await ProcessReaderAsync(reader, pageSize, sqlOrder, cts.Token);
-    }
-
-    async Task<QueryResult<Client.Item>> IDatabase.ContinueQuery(string continuationToken, CancellationToken cancellation)
-    {
-        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
-        var decodedToken = (await DecodeContinuationTokenAsync(continuationToken, cts.Token)).AsObject();
-        DateTime timestamp = new DateTime(decodedToken["t"].GetValue<long>());
-        long sequentialId = decodedToken["s"].GetValue<long>();
-        string sqlOrder = decodedToken["o"].GetValue<string>();
-        int pageSize = decodedToken["p"].GetValue<int>();
-        await using var db = await OpenDatabaseAsync(cts.Token);
-        await using var reader = await OpenReaderAsyncAsync(db, timestamp, sqlOrder, pageSize, cancellation);
-
-        if (!await SkipReaderAsync(reader, sequentialId, cts.Token))
-        {
-            return new QueryResult<Client.Item>(null, null);
-        }
-
-        return await ProcessReaderAsync(reader, pageSize, sqlOrder, cts.Token);
-    }
-
-    public void Dispose()
-    {
-        _cts.Cancel();
-        _cts.Dispose();
+        return await ProcessReaderAsync(reader, table, pageSize, sqlOrder, cts.Token);
     }
 
     private async Task<DbConnection> OpenDatabaseAsync(CancellationToken cancellation)
@@ -90,6 +104,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
 
     private static async Task<DbDataReader> OpenReaderAsyncAsync(
         DbConnection connection,
+        string table,
         DateTime startingTimestamp,
         string sqlOrder,
         int pageSize,
@@ -97,9 +112,9 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
     {
         await using var command = connection.CreateCommand();
         bool firstPage = startingTimestamp == DateTime.MinValue || startingTimestamp == DateTime.MaxValue;
-        StringBuilder queryText = new("select id,sequential_id,created,description from looseitems");
+        StringBuilder queryText = new("select id,sequential_id,created,description from ");
 
-        command.CommandType = CommandType.Text;
+        queryText.Append(table);
 
         if (!firstPage)
         {
@@ -125,12 +140,15 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
             queryText.Append(pageSize + 1);
         }
 
+        command.CommandType = CommandType.Text;
         command.CommandText = queryText.ToString();
 
         return await command.ExecuteReaderAsync(cancellation);
     }
 
-    private static async Task<bool> SkipReaderAsync(DbDataReader reader, long sequentialId,
+    private static async Task<bool> SkipReaderAsync(
+        DbDataReader reader,
+        long sequentialId,
         CancellationToken cancellation)
     {
         while (await reader.ReadAsync(cancellation))
@@ -147,6 +165,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
 
     private static async Task<QueryResult<Client.Item>> ProcessReaderAsync(
         DbDataReader reader,
+        string table,
         int pageSize,
         string sqlOrder,
         CancellationToken cancellation)
@@ -176,6 +195,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
 
             var tokenData = new JsonObject
             {
+                ["tb"] = table,
                 ["t"] = ticks,
                 ["s"] = sid, // sequential ID of the last item on the returned page
                 ["o"] = sqlOrder,

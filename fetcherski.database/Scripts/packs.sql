@@ -22,7 +22,7 @@ create table public."pack_contents"
     family "pack_contents_items" (pack_id, sequential_id, id)
 );
 
-create view "pack_contents_forward" as
+create view "pack_contents_view" as
 select "pack_contents".id            "id",
        "packs".created               "created",
        "pack_contents".sequential_id "sequential_id",
@@ -30,24 +30,4 @@ select "pack_contents".id            "id",
        "packs".id                    "pack_id",
        "packs".name                  "pack_name"
 from "packs"
-         join "pack_contents" on ("packs".id = "pack_contents".pack_id
-    )
-order by created, sequential_id;
-
-create view "pack_contents_reverse" as
-select "pack_contents".id            "id",
-       "packs".created               "created",
-       "pack_contents".sequential_id "sequential_id",
-       "pack_contents".description   "description",
-       "packs".id                    "pack_id",
-       "packs".name                  "pack_name"
-from "packs"
-         join "pack_contents" on ("packs".id = "pack_contents".pack_id
-    )
-order by created desc, sequential_id desc;
-
-select *
-from "pack_contents_forward";
-
-select *
-from "pack_contents_reverse";
+         join "pack_contents" on ("packs".id = "pack_contents".pack_id);
