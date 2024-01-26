@@ -6,12 +6,14 @@ namespace fetcherski.client;
 
 public class Client(Uri baseUri)
 {
-    public IAsyncEnumerable<string[]> Query(int pageSize, bool descending) =>
+    public record struct Item(Guid id, string description);
+
+    public IAsyncEnumerable<Item[]> Query(int pageSize, bool descending = false) =>
         new Enumerable(baseUri, pageSize, descending);
 
-    private class Enumerable(Uri baseUri, int pageSize, bool descending) : IAsyncEnumerable<string[]>
+    private class Enumerable(Uri baseUri, int pageSize, bool descending) : IAsyncEnumerable<Item[]>
     {
-        IAsyncEnumerator<string[]> IAsyncEnumerable<string[]>.GetAsyncEnumerator(CancellationToken cancellationToken)
+        IAsyncEnumerator<Item[]> IAsyncEnumerable<Item[]>.GetAsyncEnumerator(CancellationToken cancellationToken)
         {
             return new Enumerator(baseUri, pageSize, descending, cancellationToken);
         }
@@ -21,15 +23,15 @@ public class Client(Uri baseUri)
         Uri baseUri,
         int pageSize,
         bool descending,
-        CancellationToken cancellation) : IAsyncEnumerator<string[]>
+        CancellationToken cancellation) : IAsyncEnumerator<Item[]>
     {
         private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         private readonly HttpClient _client = new();
         private bool _exhausted = false;
-        private string[]? _current = null;
+        private Item[]? _current = null;
         private string? _continuationToken = null;
 
-        async ValueTask<bool> IAsyncEnumerator<string[]>.MoveNextAsync()
+        async ValueTask<bool> IAsyncEnumerator<Item[]>.MoveNextAsync()
         {
             if (_exhausted)
             {
@@ -44,6 +46,7 @@ public class Client(Uri baseUri)
                 {
                     query.Append("&order=descending");
                 }
+
                 using HttpRequestMessage request = new(HttpMethod.Get, new Uri(baseUri, query.ToString()));
                 using var response = await _client.SendAsync(request, _cts.Token);
 
@@ -59,7 +62,7 @@ public class Client(Uri baseUri)
             }
         }
 
-        string[] IAsyncEnumerator<string[]>.Current => _current;
+        Item[] IAsyncEnumerator<Item[]>.Current => _current;
 
         public ValueTask DisposeAsync()
         {
@@ -79,8 +82,8 @@ public class Client(Uri baseUri)
 
             await using var stream = await response.Content.ReadAsStreamAsync(_cts.Token);
             var document = await JsonDocument.ParseAsync(stream, default, _cts.Token);
-            _current = document.RootElement.Deserialize<string[]>();
-                
+            _current = document.RootElement.Deserialize<Item[]>(new JsonSerializerOptions { IncludeFields = true });
+
             if (_current is null || !response.Headers.TryGetValues("X-Continuation-Token", out var values))
             {
                 _exhausted = true;
@@ -89,7 +92,7 @@ public class Client(Uri baseUri)
             {
                 _continuationToken = values.First();
             }
-            
+
             return _current is not null && _current.Length > 0;
         }
     }

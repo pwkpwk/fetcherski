@@ -1,4 +1,5 @@
-﻿using fetcherski.database;
+﻿using fetcherski.client;
+using fetcherski.database;
 using Microsoft.AspNetCore.Mvc;
 
 namespace fetcherski.controllers;
@@ -10,7 +11,7 @@ public class DefaultController(IDatabase database) : Controller
     private const int DefaultPageSize = 10;
 
     [HttpGet, Route("query"), Produces("application/json")]
-    public async Task<string[]?> StartQuery([FromQuery] int? pageSize, [FromQuery] string? order,
+    public async Task<Client.Item[]?> StartQuery([FromQuery] int? pageSize, [FromQuery] string? order,
         CancellationToken cancellation)
     {
         var result = await database.StartQuery(
@@ -25,11 +26,11 @@ public class DefaultController(IDatabase database) : Controller
             Response.Headers[ContinuationTokenHeader] = result.ContinuationToken;
         }
 
-        return result.Data ?? Array.Empty<string>();
+        return result.Data ?? Array.Empty<Client.Item>();
     }
 
     [HttpGet, Route("continue"), Produces("application/json")]
-    public async Task<string[]?> ContinueQuery(
+    public async Task<Client.Item[]?> ContinueQuery(
         [FromHeader(Name = ContinuationTokenHeader)]
         string continuationToken,
         CancellationToken cancellation)
@@ -41,6 +42,6 @@ public class DefaultController(IDatabase database) : Controller
             Response.Headers[ContinuationTokenHeader] = result.ContinuationToken;
         }
 
-        return result.Data ?? Array.Empty<string>();
+        return result.Data ?? Array.Empty<Client.Item>();
     }
 }

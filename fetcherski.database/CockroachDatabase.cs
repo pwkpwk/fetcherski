@@ -3,6 +3,7 @@ using System.Data.Common;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using fetcherski.client;
 using fetcherski.database.Configuration;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -14,7 +15,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
     private readonly CockroachConfig _config = options.Value;
     private readonly CancellationTokenSource _cts = new();
 
-    async Task<QueryResult<string>> IDatabase.StartQuery(
+    async Task<QueryResult<Client.Item>> IDatabase.StartQuery(
         int pageSize,
         IDatabase.Order order,
         CancellationToken cancellation)
@@ -31,7 +32,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         return await ProcessReaderAsync(reader, pageSize, sqlOrder, cts.Token);
     }
 
-    async Task<QueryResult<string>> IDatabase.ContinueQuery(string continuationToken, CancellationToken cancellation)
+    async Task<QueryResult<Client.Item>> IDatabase.ContinueQuery(string continuationToken, CancellationToken cancellation)
     {
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
         var decodedToken = (await DecodeContinuationTokenAsync(continuationToken, cts.Token)).AsObject();
@@ -44,7 +45,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
 
         if (!await SkipReaderAsync(reader, sequentialId, cts.Token))
         {
-            return new QueryResult<string>(null, null);
+            return new QueryResult<Client.Item>(null, null);
         }
 
         return await ProcessReaderAsync(reader, pageSize, sqlOrder, cts.Token);
@@ -95,7 +96,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         CancellationToken cancellation)
     {
         await using var command = connection.CreateCommand();
-        bool firstPage = startingTimestamp == DateTime.MinValue || startingTimestamp == DateTime.MaxValue; 
+        bool firstPage = startingTimestamp == DateTime.MinValue || startingTimestamp == DateTime.MaxValue;
         StringBuilder queryText = new("select id,sequential_id,created,description from looseitems");
 
         command.CommandType = CommandType.Text;
@@ -144,13 +145,13 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         return false;
     }
 
-    private static async Task<QueryResult<string>> ProcessReaderAsync(
+    private static async Task<QueryResult<Client.Item>> ProcessReaderAsync(
         DbDataReader reader,
         int pageSize,
         string sqlOrder,
         CancellationToken cancellation)
     {
-        var data = new List<string>();
+        var data = new List<Client.Item>(pageSize);
         long sid = -1;
         long ticks = -1;
         int count = 0;
@@ -162,7 +163,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
             sid = reader.GetInt64(1);
             ticks = reader.GetDateTime(2).Ticks;
 
-            data.Add($"{id}:[{sid}]->{description}");
+            data.Add(new Client.Item { id = id, description = description });
             count++;
         }
 
@@ -186,6 +187,6 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
             newContinuationToken = Convert.ToBase64String(stream.ToArray());
         }
 
-        return new QueryResult<string>(newContinuationToken, data.ToArray());
+        return new QueryResult<Client.Item>(newContinuationToken, data.ToArray());
     }
 }

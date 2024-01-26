@@ -1,9 +1,9 @@
 ﻿using fetcherski.client;
 
-await foreach (var array in new Client(new Uri("https://localhost:7118/")).Query(2, true))
+await foreach (var array in new Client(new Uri("https://localhost:7118/")).Query(2, false))
 {
-    foreach (var str in array)
+    foreach (var item in array)
     {
-        Console.WriteLine(str);
+        Console.WriteLine(item);
     } 
 }
