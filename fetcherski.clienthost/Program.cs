@@ -6,6 +6,7 @@ var client = new Client(new Uri("https://localhost:7118/"));
 
 Console.WriteLine("FORWARD:");
 await PrintItems(client, new ItemsOrder(true));
+Console.WriteLine();
 Console.WriteLine("REVERSE:");
 await PrintItems(client, new ItemsOrder(false));
 

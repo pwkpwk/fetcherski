@@ -8,6 +8,11 @@ public static class AsyncSequences
     public static IAsyncEnumerable<T> MergeSort<T>(IComparer<T> order, params IAsyncEnumerable<T>[] sources) =>
         new MergeSoringEnumerable<T>(order, sources);
 
+    public delegate Task<(TState, TValue, bool)> Fold<TState, TValue>(TState state, CancellationToken cancellation);
+
+    public static IAsyncEnumerable<TValue> Unfold<TState, TValue>(Fold<TState, TValue> fold, TState initialState) =>
+        new UnfoldingEnumerable<TState, TValue>(fold, initialState);
+
     private sealed class UnfurlingEnumerable<T>(IAsyncEnumerable<IEnumerable<T>> source) : IAsyncEnumerable<T>
     {
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellation) =>
@@ -55,8 +60,9 @@ public static class AsyncSequences
         }
     }
 
-    private sealed class MergeSoringEnumerable<T>(IComparer<T> order, IEnumerable<IAsyncEnumerable<T>> sources)
-        : IAsyncEnumerable<T>
+    private sealed class MergeSoringEnumerable<T>(
+        IComparer<T> order,
+        IEnumerable<IAsyncEnumerable<T>> sources) : IAsyncEnumerable<T>
     {
         IAsyncEnumerator<T> IAsyncEnumerable<T>.GetAsyncEnumerator(CancellationToken cancellation) =>
             new Enumerator(order, sources, cancellation);
@@ -66,7 +72,9 @@ public static class AsyncSequences
             IEnumerable<IAsyncEnumerable<T>> sources,
             CancellationToken cancellation) : IAsyncEnumerator<T>
         {
-            private readonly CancellationTokenSource _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            private readonly CancellationTokenSource _cts =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+
             private PriorityQueue<IAsyncEnumerator<T>, T>? _queue = null;
             private T _current = default;
             private bool _exhausted = false;
@@ -79,6 +87,7 @@ public static class AsyncSequences
                 {
                     await item.Element.DisposeAsync();
                 }
+
                 _queue.Clear();
                 _cts.Dispose();
             }
@@ -103,6 +112,7 @@ public static class AsyncSequences
                         {
                             await source.DisposeAsync();
                         }
+
                         return true;
                     }
                     else
@@ -129,7 +139,7 @@ public static class AsyncSequences
 
                     if (await enumerator.MoveNextAsync())
                     {
-                        queue.Enqueue(enumerator, enumerator.Current);                        
+                        queue.Enqueue(enumerator, enumerator.Current);
                     }
                     else
                     {
@@ -139,6 +149,46 @@ public static class AsyncSequences
 
                 return queue;
             }
+        }
+    }
+
+    private sealed class UnfoldingEnumerable<TState, TValue>(
+        Fold<TState, TValue> fold,
+        TState initialState) : IAsyncEnumerable<TValue>
+    {
+        IAsyncEnumerator<TValue> IAsyncEnumerable<TValue>.GetAsyncEnumerator(CancellationToken cancellation) =>
+            new Enumerator(fold, initialState, cancellation);
+
+        private sealed class Enumerator(
+            Fold<TState, TValue> fold,
+            TState state,
+            CancellationToken cancellation) : IAsyncEnumerator<TValue>
+        {
+            private readonly CancellationTokenSource _cts =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+
+            private TValue? _current;
+
+            async ValueTask IAsyncDisposable.DisposeAsync()
+            {
+                await _cts.CancelAsync();
+                _cts.Dispose();
+            }
+
+            async ValueTask<bool> IAsyncEnumerator<TValue>.MoveNextAsync()
+            {
+                if (_cts.IsCancellationRequested)
+                {
+                    _current = default;
+                    return false;
+                }
+
+                (state, _current, bool moreData) = await fold(state, _cts.Token);
+
+                return moreData;
+            }
+
+            TValue IAsyncEnumerator<TValue>.Current => _current!;
         }
     }
 }
