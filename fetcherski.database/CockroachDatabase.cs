@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System.Buffers;
+using System.Data;
 using System.Data.Common;
 using System.Text;
 using System.Text.Json;
@@ -10,10 +11,16 @@ using Npgsql;
 
 namespace fetcherski.database;
 
-public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options) : IDatabase, IDisposable
+public sealed class CockroachDatabase(
+    IOptionsSnapshot<CockroachConfig> options,
+    ILogger<CockroachDatabase> logger) : IDatabase, IDisposable
 {
     private readonly CockroachConfig _config = options.Value;
     private readonly CancellationTokenSource _cts = new();
+    private readonly ArrayPool<byte> _bufferPool = ArrayPool<byte>.Shared;
+
+    private static readonly EventId TokenDecodeError = new(1, nameof(TokenDecodeError));
+    private static readonly EventId SkipCount = new(2, nameof(SkipCount));
 
     Task<QueryResult<Client.Item>> IDatabase.QueryLooseItemsAsync(
         int pageSize,
@@ -25,16 +32,25 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         IDatabase.Order order,
         CancellationToken cancellation) => QueryTableAsync("pack_contents_view", pageSize, order, cancellation);
 
-    async Task<QueryResult<Client.Item>> IDatabase.ContinueAsync(string continuationToken,
+    async Task<QueryResult<Client.Item>> IDatabase.ContinueAsync(
+        string continuationToken,
         CancellationToken cancellation)
     {
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
-        var decodedToken = (await DecodeContinuationTokenAsync(continuationToken, cts.Token)).AsObject();
-        string table = decodedToken["q"].GetValue<string>();
-        DateTime timestamp = new DateTime(decodedToken["t"].GetValue<long>());
-        long sequentialId = decodedToken["s"].GetValue<long>();
-        string sqlOrder = decodedToken["o"].GetValue<string>();
-        int pageSize = decodedToken["p"].GetValue<int>();
+        var node = await DecodeContinuationTokenAsync(continuationToken, cts.Token);
+
+        if (node is null)
+        {
+            logger.LogError(TokenDecodeError, "Unable to decode the continuation token.");
+            return new QueryResult<Client.Item>(null, null);
+        }
+
+        var decodedToken = node.AsObject();
+        string table = decodedToken["q"]!.GetValue<string>();
+        DateTime timestamp = new DateTime(decodedToken["t"]!.GetValue<long>());
+        long sequentialId = decodedToken["s"]!.GetValue<long>();
+        string sqlOrder = decodedToken["o"]!.GetValue<string>();
+        int pageSize = decodedToken["p"]!.GetValue<int>();
         await using var db = await OpenDatabaseAsync(cts.Token);
         await using var reader = await OpenReaderAsyncAsync(db, table, timestamp, sqlOrder, pageSize, cancellation);
 
@@ -146,16 +162,19 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         return await command.ExecuteReaderAsync(cancellation);
     }
 
-    private static async Task<bool> SkipReaderAsync(
+    private async Task<bool> SkipReaderAsync(
         DbDataReader reader,
         long sequentialId,
         CancellationToken cancellation)
     {
+        int count = 0;
+        
         while (await reader.ReadAsync(cancellation))
         {
-            var sid = reader.GetInt64(1);
-            if (sequentialId == sid)
+            ++count;
+            if (sequentialId == reader.GetInt64(1))
             {
+                logger.LogInformation(SkipCount, "Skipped {0}", count);
                 return true;
             }
         }
@@ -163,7 +182,7 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         return false;
     }
 
-    private static async Task<QueryResult<Client.Item>> ProcessReaderAsync(
+    private async Task<QueryResult<Client.Item>> ProcessReaderAsync(
         DbDataReader reader,
         string table,
         int pageSize,
@@ -171,18 +190,16 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
         CancellationToken cancellation)
     {
         var data = new List<Client.Item>(pageSize);
-        long sid = default, ticks = default;
+        Client.Item item = default;
         int count = 0;
 
         while (count < pageSize && await reader.ReadAsync(cancellation))
         {
-            var item = new Client.Item(
+            item = new Client.Item(
                 reader.GetGuid(0),
                 reader.GetString(3),
                 reader.GetInt64(1),
                 reader.GetDateTime(2));
-            ticks = item.timestamp.Ticks;
-            sid = item.sid;
             data.Add(item);
             count++;
         }
@@ -191,23 +208,39 @@ public sealed class CockroachDatabase(IOptionsSnapshot<CockroachConfig> options)
 
         if (count == pageSize && await reader.ReadAsync(cancellation))
         {
-            using var stream = new MemoryStream();
-            await using var writer = new Utf8JsonWriter(stream);
-
-            var tokenData = new JsonObject
-            {
-                ["q"] = table,
-                ["t"] = ticks, // timestamp of the last item on the returned page
-                ["s"] = sid, // sequential ID of the last item on the returned page
-                ["o"] = sqlOrder,
-                ["p"] = pageSize
-            };
-
-            tokenData.WriteTo(writer);
-            await writer.FlushAsync(cancellation);
-            newContinuationToken = Convert.ToBase64String(stream.ToArray());
+            newContinuationToken = MakeContinuationToken(item, sqlOrder, pageSize, table);
         }
 
         return new QueryResult<Client.Item>(newContinuationToken, data.ToArray());
+    }
+
+    private string MakeContinuationToken(
+        Client.Item item,
+        string sqlOrder,
+        int pageSize,
+        string table)
+    {
+        byte[] buffer = _bufferPool.Rent(1024);
+
+        try
+        {
+            using var stream = new MemoryStream(buffer, true);
+            using var writer = new Utf8JsonWriter(stream);
+
+            writer.WriteStartObject();
+            writer.WriteString("q", table);
+            writer.WriteNumber("t", item.timestamp.Ticks);
+            writer.WriteNumber("s", item.sid);
+            writer.WriteString("o", sqlOrder);
+            writer.WriteNumber("p", pageSize);
+            writer.WriteEndObject();
+            writer.Flush();
+
+            return Convert.ToBase64String(buffer, 0, (int)stream.Position);
+        }
+        finally
+        {
+            _bufferPool.Return(buffer);
+        }
     }
 }
