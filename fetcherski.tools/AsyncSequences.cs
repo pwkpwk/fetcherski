@@ -20,8 +20,8 @@ public static class AsyncSequences
 
         private sealed class Enumerator(IAsyncEnumerator<IEnumerable<T>> source) : IAsyncEnumerator<T>
         {
-            private IEnumerator<T>? _page = null;
-            private bool _exhausted = false;
+            private IEnumerator<T>? _page;
+            private bool _exhausted;
 
             ValueTask IAsyncDisposable.DisposeAsync()
             {
@@ -56,7 +56,7 @@ public static class AsyncSequences
                 return false;
             }
 
-            T IAsyncEnumerator<T>.Current => _page is not null ? _page.Current : default;
+            T IAsyncEnumerator<T>.Current => _page!.Current;
         }
     }
 
@@ -75,20 +75,24 @@ public static class AsyncSequences
             private readonly CancellationTokenSource _cts =
                 CancellationTokenSource.CreateLinkedTokenSource(cancellation);
 
-            private PriorityQueue<IAsyncEnumerator<T>, T>? _queue = null;
-            private T _current = default;
-            private bool _exhausted = false;
+            private PriorityQueue<IAsyncEnumerator<T>, T>? _queue;
+            private T? _current;
+            private bool _exhausted;
 
             async ValueTask IAsyncDisposable.DisposeAsync()
             {
                 _exhausted = true;
                 await _cts.CancelAsync();
-                foreach (var item in _queue.UnorderedItems)
+
+                if (_queue is not null)
                 {
-                    await item.Element.DisposeAsync();
+                    foreach (var item in _queue.UnorderedItems)
+                    {
+                        await item.Element.DisposeAsync();
+                    }
+                    _queue.Clear();
                 }
 
-                _queue.Clear();
                 _cts.Dispose();
             }
 
@@ -96,10 +100,7 @@ public static class AsyncSequences
             {
                 while (!_exhausted)
                 {
-                    if (_queue is null)
-                    {
-                        _queue = await MakeQueue(order, sources, _cts.Token);
-                    }
+                    _queue ??= await MakeQueue(order, sources, _cts.Token);
 
                     if (_queue.TryDequeue(out var source, out var value))
                     {
@@ -124,7 +125,7 @@ public static class AsyncSequences
                 return false;
             }
 
-            public T Current => _current;
+            public T Current => _current!;
 
             private static async ValueTask<PriorityQueue<IAsyncEnumerator<T>, T>> MakeQueue(
                 IComparer<T> order,

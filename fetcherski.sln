@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.clienthost", "fe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.tools", "fetcherski.tools\fetcherski.tools.csproj", "{9E589165-5B89-42A7-B504-6E3AB54B0246}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.test", "fetcherski.test\fetcherski.test.csproj", "{71954104-DB14-4D78-B147-BD9284A1C89D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{9E589165-5B89-42A7-B504-6E3AB54B0246}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9E589165-5B89-42A7-B504-6E3AB54B0246}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9E589165-5B89-42A7-B504-6E3AB54B0246}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71954104-DB14-4D78-B147-BD9284A1C89D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71954104-DB14-4D78-B147-BD9284A1C89D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71954104-DB14-4D78-B147-BD9284A1C89D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71954104-DB14-4D78-B147-BD9284A1C89D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
