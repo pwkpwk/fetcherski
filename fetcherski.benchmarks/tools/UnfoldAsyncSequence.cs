@@ -13,7 +13,7 @@ public class UnfoldAsyncSequence
         var sequence =
             AsyncSequences.Unfold((state, _) => Task.FromResult((state + 1, state + 1, state < SequenceLength)), 0);
 
-        await foreach (var n in sequence)
+        await foreach (var _ in sequence)
         {
             // Do nothing            
         }
@@ -24,7 +24,7 @@ public class UnfoldAsyncSequence
     {
         var sequence = AsyncSequences.Unfold(async (state, _) => (state + 1, state + 1, state < SequenceLength), 0);
 
-        await foreach (var n in sequence)
+        await foreach (var _ in sequence)
         {
             // Do nothing            
         }
