@@ -78,7 +78,8 @@ public sealed class CockroachDatabase(
         using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _cts.Token);
         var sqlOrder = SqlOrderFromOrder(order);
         await using var db = await OpenDatabaseAsync(cts.Token);
-        await using var reader = await OpenReaderAsyncAsync(db,
+        await using var reader = await OpenReaderAsyncAsync(
+            db,
             table,
             order == IDatabase.Order.Ascending ? DateTime.MinValue : DateTime.MaxValue,
             sqlOrder,
@@ -169,7 +170,7 @@ public sealed class CockroachDatabase(
         CancellationToken cancellation)
     {
         int count = 0;
-        
+
         while (await reader.ReadAsync(cancellation))
         {
             ++count;
