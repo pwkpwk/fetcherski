@@ -1,9 +1,23 @@
 ﻿using fetcherski.client;
+using fetcherski.clienthost;
+using fetcherski.tools;
 
-await foreach (var array in new Client(new Uri("https://localhost:7118/")).QueryLooseItemsAsync(2, true))
+var client = new Client(new Uri("https://localhost:7118/"));
+
+Console.WriteLine("FORWARD:");
+await PrintItems(client, new ItemsOrder(true));
+Console.WriteLine("REVERSE:");
+await PrintItems(client, new ItemsOrder(false));
+
+
+static async Task PrintItems(Client client, ItemsOrder order)
 {
-    foreach (var item in array)
+    var query = AsyncSequences.MergeSort(order,
+        client.QueryLooseItemsAsync(2, order.IsDescending).Unfurl(),
+        client.QueryPackItemsAsync(2, order.IsDescending).Unfurl());
+
+    await foreach (var item in query)
     {
-        Console.WriteLine(item);
-    } 
+        Console.WriteLine(item.description);
+    }
 }
