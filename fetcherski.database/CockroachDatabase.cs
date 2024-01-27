@@ -1,6 +1,7 @@
 ﻿using System.Buffers;
 using System.Data;
 using System.Data.Common;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -214,6 +215,7 @@ public sealed class CockroachDatabase(
         return new QueryResult<Client.Item>(newContinuationToken, data.ToArray());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private string MakeContinuationToken(
         Client.Item item,
         string sqlOrder,
