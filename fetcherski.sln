@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.tools", "fetcher
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.test", "fetcherski.test\fetcherski.test.csproj", "{71954104-DB14-4D78-B147-BD9284A1C89D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.benchmarks", "fetcherski.benchmarks\fetcherski.benchmarks.csproj", "{22F65890-BE0D-447A-94A8-FB07052D3BA7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +50,9 @@ Global
 		{71954104-DB14-4D78-B147-BD9284A1C89D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71954104-DB14-4D78-B147-BD9284A1C89D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71954104-DB14-4D78-B147-BD9284A1C89D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
