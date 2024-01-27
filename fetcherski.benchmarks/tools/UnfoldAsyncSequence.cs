@@ -3,9 +3,10 @@ using fetcherski.tools;
 
 namespace fetcherski.benchmarks.tools;
 
+[MemoryDiagnoser]
 public class UnfoldAsyncSequence
 {
-    [Params(50, 250)] public int SequenceLength;
+    [Params(100, 1000)] public int SequenceLength;
 
     [Benchmark(Description = "Return a completed task")]
     public async Task ReturnTask()
