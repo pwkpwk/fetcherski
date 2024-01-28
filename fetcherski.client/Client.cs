@@ -72,7 +72,7 @@ public class Client(Uri baseUri)
             }
         }
 
-        Item[] IAsyncEnumerator<Item[]>.Current => _current;
+        Item[] IAsyncEnumerator<Item[]>.Current => _current!;
 
         public ValueTask DisposeAsync()
         {

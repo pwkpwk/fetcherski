@@ -14,7 +14,7 @@ public class ItemsOrder(bool descending) : IComparer<Client.Item>
             result = x.sid.CompareTo(y.sid);
         }
 
-        if (descending)
+        if (IsDescending)
         {
             result = -result;
         }
