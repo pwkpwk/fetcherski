@@ -24,5 +24,7 @@ jobs:
         run: dotnet build --no-restore --configuration Release
       - name: Test
         run: dotnet test --no-build --verbosity normal --configuration Release
-      - name: Benchmarks
-        run: dotnet run --no-build --configuration Release --no-restore --project ./fetcherski.benchmarks/fetcherski.benchmarks.csproj -- --filter fetcherski.benchmarks*
+      - name: Build Benchmarks
+        run: dotnet build fetcherski.benchmarks -configuration Release --no-restore --output .benchmarks
+      - name: Run Benchmarks
+        run: dotnet ./.benchmarks/fetcherski.benchmarks.dll --filter fetcherski.benchmarks*
