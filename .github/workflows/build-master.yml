@@ -25,4 +25,4 @@ jobs:
       - name: Test
         run: dotnet test --no-build --verbosity normal --configuration Release
       - name: Benchmarks
-        run: dotnet run --no-build --configuration Release --no-restore --project ./fetcherski.benchmarks/fetcherski.benchmarks.csproj -- --filter *
+        run: dotnet run --no-build --configuration Release --no-restore --project ./fetcherski.benchmarks/fetcherski.benchmarks.csproj -- --filter fetcherski.benchmarks*
