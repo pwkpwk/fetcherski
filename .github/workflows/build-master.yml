@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v 3
         with:
           dotnet-version: 8.0.x
       - name: Restore dependencies
@@ -24,7 +24,5 @@ jobs:
         run: dotnet build --no-restore --configuration Release
       - name: Test
         run: dotnet test --no-build --verbosity normal --configuration Release
-      - name: Build Benchmarks
-        run: dotnet build fetcherski.benchmarks --configuration Release --no-restore --output .benchmarks
       - name: Run Benchmarks
-        run: dotnet ./.benchmarks/fetcherski.benchmarks.dll
+        run: dotnet run --configuration Release --no-restore --project fetcherski.benchmarks
