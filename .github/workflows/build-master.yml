@@ -27,4 +27,4 @@ jobs:
       - name: Build Benchmarks
         run: dotnet build fetcherski.benchmarks --configuration Release --no-restore --output .benchmarks
       - name: Run Benchmarks
-        run: dotnet ./.benchmarks/fetcherski.benchmarks.dll --filter fetcherski.benchmarks*
+        run: dotnet ./.benchmarks/fetcherski.benchmarks.dll fetcherski.benchmarks*
