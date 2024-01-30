@@ -9,10 +9,6 @@ static class Program
 {
     static void Main(string[] args)
     {
-        var config = LoadDatabaseConfig();
-        
-        Console.Out.WriteLine($"Database={config.Database}, Schema={config.Schema}, User={config.User}, Host={config.Host}");
-        
         var assembly = Assembly.GetEntryAssembly();
         
         if (args.Length > 0)
