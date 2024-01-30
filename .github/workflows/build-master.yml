@@ -27,5 +27,5 @@ jobs:
       - name: Run Benchmarks
         env:
           fetcherski.CockroachDB__Password: ${{secrets.crdbPassword}}
-          fetcherski.CockroachDB__User: $crdbUser
+          fetcherski.CockroachDB__User: ${{vars.crdbUser}}
         run: dotnet run --configuration Release --no-restore --project fetcherski.benchmarks
