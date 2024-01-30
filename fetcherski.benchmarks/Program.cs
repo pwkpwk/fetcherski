@@ -7,15 +7,16 @@ static class Program
 {
     static void Main(string[] args)
     {
+        var assembly = Assembly.GetEntryAssembly();
+        
         if (args.Length > 0)
         {
-            var assembly = Assembly.GetEntryAssembly();
             Console.Out.WriteLine($"{assembly.GetName().Name}: {string.Join(" ", args)}");
-            BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).Run(args);
+            BenchmarkSwitcher.FromAssembly(assembly).Run(args);
         }
         else
         {
-            BenchmarkSwitcher.FromAssembly(Assembly.GetExecutingAssembly()).RunAll();
+            BenchmarkSwitcher.FromAssembly(assembly).RunAll();
         }
     }
 }
