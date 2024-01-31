@@ -5,7 +5,7 @@ using BenchmarkDotNet.Toolchains.InProcess.Emit;
 
 namespace fetcherski.test.benchmarks.database;
 
-[TestFixture]
+[TestFixture, Category("benchmarks")]
 public class TokenGenerationBenchmarkTests
 {
     private IConfig? _config;
