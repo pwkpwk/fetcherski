@@ -9,7 +9,7 @@ static class Program
 {
     static void Main(string[] args)
     {
-        var assembly = Assembly.GetEntryAssembly();
+        var assembly = Assembly.GetEntryAssembly()!;
         
         if (args.Length > 0)
         {

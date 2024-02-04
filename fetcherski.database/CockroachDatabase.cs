@@ -16,9 +16,15 @@ public sealed class CockroachDatabase(
     IOptionsSnapshot<CockroachConfig> options,
     ILogger<CockroachDatabase> logger) : IDatabase, IDisposable
 {
+    private const int MaxTokenByteSize = 1024;
+    private const int BufferPoolBucketSize = 1000;
+    private static readonly ArrayPool<byte> BufferPool = ArrayPool<byte>.Create(MaxTokenByteSize, BufferPoolBucketSize);
+
+    private const string SqlAscending = "ASC";
+    private const string SqlDescending = "DESC";
+        
     private readonly CockroachConfig _config = options.Value;
     private readonly CancellationTokenSource _cts = new();
-    private readonly ArrayPool<byte> _bufferPool = ArrayPool<byte>.Shared;
 
     private static readonly EventId TokenDecodeError = new(1, nameof(TokenDecodeError));
     private static readonly EventId SkipCount = new(2, nameof(SkipCount));
@@ -112,7 +118,7 @@ public sealed class CockroachDatabase(
     }
 
     private static string SqlOrderFromOrder(IDatabase.Order order) =>
-        order == IDatabase.Order.Ascending ? "asc" : "desc";
+        order == IDatabase.Order.Ascending ? SqlAscending : SqlDescending;
 
     private static Task<JsonNode?> DecodeContinuationTokenAsync(string base64Token, CancellationToken cancellation)
     {
@@ -130,14 +136,14 @@ public sealed class CockroachDatabase(
     {
         await using var command = connection.CreateCommand();
         bool firstPage = startingTimestamp == DateTime.MinValue || startingTimestamp == DateTime.MaxValue;
-        StringBuilder queryText = new("select id,sequential_id,created,description from ");
+        StringBuilder queryText = new("SELECT id,sequential_id,created,description FROM ");
 
         queryText.Append(table);
 
         if (!firstPage)
         {
-            queryText.Append(" where created ");
-            queryText.Append(sqlOrder == "asc" ? ">=" : "<=");
+            queryText.Append(" WHERE created ");
+            queryText.Append(sqlOrder == SqlAscending ? ">=" : "<=");
             queryText.Append(" @timestamp");
 
             var timestampParameter = command.CreateParameter();
@@ -223,7 +229,7 @@ public sealed class CockroachDatabase(
         int pageSize,
         string table)
     {
-        byte[] buffer = _bufferPool.Rent(1024);
+        byte[] buffer = BufferPool.Rent(MaxTokenByteSize);
 
         try
         {
@@ -243,7 +249,7 @@ public sealed class CockroachDatabase(
         }
         finally
         {
-            _bufferPool.Return(buffer);
+            BufferPool.Return(buffer);
         }
     }
 }

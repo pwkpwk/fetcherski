@@ -1,4 +1,5 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System.Runtime.CompilerServices;
+using BenchmarkDotNet.Attributes;
 using fetcherski.tools;
 
 namespace fetcherski.benchmarks.tools;
@@ -86,7 +87,7 @@ public class UnfoldCompositeTypeSpeed
     private Task<(int, RefValue, bool)> RefFold(int state, CancellationToken _) =>
         Task.FromResult((state + 1, new RefValue(state + 1, state, TestUuid), state < SequenceLength));
 
-    private async IAsyncEnumerable<Value> YieldReturn(CancellationToken ct)
+    private async IAsyncEnumerable<Value> YieldReturn([EnumeratorCancellation] CancellationToken ct)
     {
         bool hasData;
         int state = 0;
@@ -98,7 +99,7 @@ public class UnfoldCompositeTypeSpeed
         } while (hasData);
     }
 
-    private async IAsyncEnumerable<RefValue> RefYieldReturn(CancellationToken ct)
+    private async IAsyncEnumerable<RefValue> RefYieldReturn([EnumeratorCancellation] CancellationToken ct)
     {
         bool hasData;
         int state = 0;

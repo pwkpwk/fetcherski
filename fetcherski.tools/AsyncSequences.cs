@@ -9,9 +9,13 @@ public static class AsyncSequences
         new MergeSoringEnumerable<T>(order, sources);
 
     public delegate Task<(TState, TValue, bool)> Fold<TState, TValue>(TState state, CancellationToken cancellation);
+    public delegate ValueTask<(TState, TValue, bool)> ValueFold<TState, TValue>(TState state, CancellationToken cancellation);
 
     public static IAsyncEnumerable<TValue> Unfold<TState, TValue>(Fold<TState, TValue> fold, TState initialState) =>
         new UnfoldingEnumerable<TState, TValue>(fold, initialState);
+
+    public static IAsyncEnumerable<TValue> ValueUnfold<TState, TValue>(ValueFold<TState, TValue> fold, TState initialState) =>
+        new ValueUnfoldingEnumerable<TState, TValue>(fold, initialState);
 
     private sealed class UnfurlingEnumerable<T>(IAsyncEnumerable<IEnumerable<T>> source) : IAsyncEnumerable<T>
     {
@@ -162,6 +166,46 @@ public static class AsyncSequences
 
         private sealed class Enumerator(
             Fold<TState, TValue> fold,
+            TState state,
+            CancellationToken cancellation) : IAsyncEnumerator<TValue>
+        {
+            private readonly CancellationTokenSource _cts =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+
+            private TValue? _current;
+
+            async ValueTask IAsyncDisposable.DisposeAsync()
+            {
+                await _cts.CancelAsync();
+                _cts.Dispose();
+            }
+
+            async ValueTask<bool> IAsyncEnumerator<TValue>.MoveNextAsync()
+            {
+                if (_cts.IsCancellationRequested)
+                {
+                    _current = default;
+                    return false;
+                }
+
+                (state, _current, bool moreData) = await fold(state, _cts.Token);
+
+                return moreData;
+            }
+
+            TValue IAsyncEnumerator<TValue>.Current => _current!;
+        }
+    }
+
+    private sealed class ValueUnfoldingEnumerable<TState, TValue>(
+        ValueFold<TState, TValue> fold,
+        TState initialState) : IAsyncEnumerable<TValue>
+    {
+        IAsyncEnumerator<TValue> IAsyncEnumerable<TValue>.GetAsyncEnumerator(CancellationToken cancellation) =>
+            new Enumerator(fold, initialState, cancellation);
+
+        private sealed class Enumerator(
+            ValueFold<TState, TValue> fold,
             TState state,
             CancellationToken cancellation) : IAsyncEnumerator<TValue>
         {
