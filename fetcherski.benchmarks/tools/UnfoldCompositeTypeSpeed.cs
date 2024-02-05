@@ -4,7 +4,7 @@ using fetcherski.tools;
 
 namespace fetcherski.benchmarks.tools;
 
-[MemoryDiagnoser]
+[MemoryDiagnoser, ReturnValueValidator(failOnError: true)]
 public class UnfoldCompositeTypeSpeed
 {
     private static readonly Guid TestUuid = Guid.NewGuid();

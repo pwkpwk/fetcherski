@@ -3,7 +3,7 @@ using fetcherski.tools;
 
 namespace fetcherski.benchmarks.tools;
 
-[MemoryDiagnoser]
+[MemoryDiagnoser, ReturnValueValidator(failOnError: true)]
 public class UnfoldAsyncSequence
 {
     [Params(100, 1000)] public int SequenceLength;

@@ -4,7 +4,7 @@ using fetcherski.tools;
 
 namespace fetcherski.benchmarks.tools;
 
-[MemoryDiagnoser]
+[MemoryDiagnoser, ReturnValueValidator(failOnError: true)]
 public class UnfoldSheerSpeed
 {
     [Params(5000, 50000)] public int SequenceLength;
@@ -65,7 +65,10 @@ public class UnfoldSheerSpeed
         do
         {
             (state, var value, hasData) = await Fold(state, ct);
-            yield return value;
+            if (hasData)
+            {
+                yield return value;
+            }
         } while (hasData);
     }
 }
