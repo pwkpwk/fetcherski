@@ -1,6 +1,7 @@
 using fetcherski.controllers;
 using fetcherski.database;
 using fetcherski.database.Configuration;
+using fetcherski.tools;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
 namespace fetcherski.service;
@@ -22,6 +23,7 @@ public static class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddScoped<IDatabase, CockroachDatabase>();
+        builder.Services.AddScoped<IAuthorization, DummyAuthorization>();
 
         var mvcConfig = builder.Services.AddControllers();
         mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DefaultController).Assembly));

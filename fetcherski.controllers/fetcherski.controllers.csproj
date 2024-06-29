@@ -9,6 +9,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\fetcherski.database\fetcherski.database.csproj" />
+      <ProjectReference Include="..\fetcherski.tools\fetcherski.tools.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 ﻿using fetcherski.client;
 using fetcherski.database;
+using fetcherski.tools;
 using Microsoft.AspNetCore.Mvc;
 
 namespace fetcherski.controllers;
@@ -17,6 +18,7 @@ public class DefaultController(
     private static readonly EventId ContinueEventId = new(3, nameof(ContinueQueryAsync));
 
     [HttpGet, Route("query-loose-items"), Produces("application/json")]
+    [FetcherskiAuthorization]
     public async Task<Client.Item[]?> QueryLooseItemsAsync(
         [FromQuery] int? pageSize,
         [FromQuery] string? order,
@@ -40,6 +42,7 @@ public class DefaultController(
     }
 
     [HttpGet, Route("query-pack-items"), Produces("application/json")]
+    [FetcherskiAuthorization(nameof(QueryPackItemsAsync))]
     public async Task<Client.Item[]?> QueryPackItemsAsync([FromQuery] int? pageSize, [FromQuery] string? order,
         CancellationToken cancellation)
     {
@@ -61,6 +64,7 @@ public class DefaultController(
     }
 
     [HttpGet, Route("continue"), Produces("application/json")]
+    [FetcherskiAuthorization("Just Some Trash")]
     public async Task<Client.Item[]?> ContinueQueryAsync(
         [FromHeader(Name = ContinuationTokenHeader)]
         string continuationToken,
