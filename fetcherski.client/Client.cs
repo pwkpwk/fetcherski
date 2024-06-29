@@ -14,6 +14,16 @@ public class Client(Uri baseUri)
     public IAsyncEnumerable<Item[]> QueryPackItemsAsync(int pageSize, bool descending = false) =>
         new Enumerable(baseUri, "query-pack-items", pageSize, descending);
 
+    public async Task<string?> CallUnauthorizedAsync(CancellationToken cancellationToken)
+    {
+        using var client = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, baseUri + "api/Unauthorized");
+
+        using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
+
+        return $"{(int)response.StatusCode} {response.StatusCode}";
+    }
+
     private class Enumerable(
         Uri baseUri,
         string query,

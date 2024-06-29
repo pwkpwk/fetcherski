@@ -2,14 +2,15 @@
 using fetcherski.clienthost;
 using fetcherski.tools;
 
-var client = new Client(new Uri("https://localhost:7118/"));
+var client = new Client(new Uri("http://localhost:5126/"));
+
+Console.WriteLine($"UnauthorizedAsync: {await client.CallUnauthorizedAsync(CancellationToken.None)}");
 
 Console.WriteLine("FORWARD:");
 await PrintItems(client, new ItemsOrder(true));
 Console.WriteLine();
 Console.WriteLine("REVERSE:");
 await PrintItems(client, new ItemsOrder(false));
-
 
 static async Task PrintItems(Client client, ItemsOrder order)
 {

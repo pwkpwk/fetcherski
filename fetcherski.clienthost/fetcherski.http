@@ -1,0 +1,4 @@
+﻿# @name Unauthorized
+GET http://localhost:5126/api/unauthorized
+
+###

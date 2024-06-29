@@ -81,4 +81,8 @@ public class DefaultController(
 
         return result.Data ?? Array.Empty<Client.Item>();
     }
+
+    [HttpGet, Route("unauthorized")]
+    [FetcherskiAuthorization]
+    public Task UnauthorizedAsync(CancellationToken _) => Task.CompletedTask;
 }
