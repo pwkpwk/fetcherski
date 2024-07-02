@@ -16,6 +16,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.test", "fetchers
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.benchmarks", "fetcherski.benchmarks\fetcherski.benchmarks.csproj", "{22F65890-BE0D-447A-94A8-FB07052D3BA7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.grpc", "fetcherski.grpc\fetcherski.grpc.csproj", "{21DBF5F2-DC77-4264-9169-8063D09D5902}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.grpcclient", "fetcherski.grpcclient\fetcherski.grpcclient.csproj", "{7FBA113C-0E89-4733-84AD-4923171EDACD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +58,13 @@ Global
 		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{22F65890-BE0D-447A-94A8-FB07052D3BA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21DBF5F2-DC77-4264-9169-8063D09D5902}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21DBF5F2-DC77-4264-9169-8063D09D5902}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21DBF5F2-DC77-4264-9169-8063D09D5902}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21DBF5F2-DC77-4264-9169-8063D09D5902}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

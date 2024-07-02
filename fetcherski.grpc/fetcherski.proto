@@ -1,0 +1,16 @@
+﻿syntax = "proto3";
+
+service Fetcherski {
+  rpc Fetch (FetchRequest) returns (FetchReply);
+}
+
+message FetchRequest {
+  int64 id = 10;
+}
+
+message FetchReply {
+  int64 id = 10;
+  string name = 20;
+  string location = 25;
+  int32 age = 30;
+}

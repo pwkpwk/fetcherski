@@ -2,6 +2,7 @@ using fetcherski.controllers;
 using fetcherski.database;
 using fetcherski.database.Configuration;
 using fetcherski.tools;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
 namespace fetcherski.service;
@@ -28,7 +29,20 @@ public static class Program
         var mvcConfig = builder.Services.AddControllers();
         mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DefaultController).Assembly));
 
+        builder.Services.AddGrpc();
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy(nameof(GrpcAuthorization), policy =>
+            {
+                policy.AddRequirements(new GrpcAuthorization());
+            });
+        });
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<IAuthorizationHandler, GrpcAuthorizationHandler>();
+
         var app = builder.Build();
+
+        app.MapGrpcService<FetcherskiService>();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -38,6 +52,7 @@ public static class Program
         }
 
         app.UseRouting();
+        app.UseAuthorization();
         app.MapControllers();
         app.UseHttpsRedirection();
 

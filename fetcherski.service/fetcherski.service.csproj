@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Grpc.AspNetCore" Version="2.63.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
@@ -19,6 +20,7 @@
     <ItemGroup>
       <ProjectReference Include="..\fetcherski.controllers\fetcherski.controllers.csproj" />
       <ProjectReference Include="..\fetcherski.database\fetcherski.database.csproj" />
+      <ProjectReference Include="..\fetcherski.grpc\fetcherski.grpc.csproj" />
     </ItemGroup>
 
 </Project>
