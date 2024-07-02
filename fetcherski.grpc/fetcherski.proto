@@ -2,6 +2,7 @@
 
 service Fetcherski {
   rpc Fetch (FetchRequest) returns (FetchReply);
+  rpc Flip (FlipRequest) returns (FlipReply);
 }
 
 message FetchRequest {
@@ -13,4 +14,11 @@ message FetchReply {
   string name = 20;
   string location = 25;
   int32 age = 30;
+}
+
+message FlipRequest {
+}
+
+message FlipReply {
+  bool flipped = 20;
 }

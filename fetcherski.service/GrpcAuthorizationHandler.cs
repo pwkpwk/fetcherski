@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Net;
+using Microsoft.AspNetCore.Authorization;
 
 namespace fetcherski.service;
 
@@ -9,7 +10,6 @@ public class GrpcAuthorizationHandler(
     private static readonly EventId AuthorizedEventId = new(1, nameof(HandleRequirementAsync));
     private static readonly EventId NoEndpointEventId = new(2, nameof(HandleRequirementAsync));
     private static readonly EventId FailedEventId = new(3, nameof(HandleRequirementAsync));
-    private static readonly EventId TraceEventId = new(4, nameof(HandleRequirementAsync));
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, GrpcAuthorization requirement)
     {
@@ -36,7 +36,7 @@ public class GrpcAuthorizationHandler(
         }
         
         logger.LogInformation(FailedEventId, "Untagged method");
-        context.Fail();
+        context.Fail(new AuthorizationFailureReason(this, "Untagged"));
         return Task.CompletedTask;
     }
 }

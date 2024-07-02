@@ -25,6 +25,9 @@ public static class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddScoped<IDatabase, CockroachDatabase>();
         builder.Services.AddScoped<IAuthorization, DummyAuthorization>();
+        builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationMiddlewareResultHandler>();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<IAuthorizationHandler, GrpcAuthorizationHandler>();
 
         var mvcConfig = builder.Services.AddControllers();
         mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DefaultController).Assembly));
@@ -37,12 +40,8 @@ public static class Program
                 policy.AddRequirements(new GrpcAuthorization());
             });
         });
-        builder.Services.AddHttpContextAccessor();
-        builder.Services.AddSingleton<IAuthorizationHandler, GrpcAuthorizationHandler>();
 
         var app = builder.Build();
-
-        app.MapGrpcService<FetcherskiService>();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -52,9 +51,16 @@ public static class Program
         }
 
         app.UseRouting();
+        
+        // UseAuthentication & UseAuthorization must be placed between UseRouting and MapControllers
+        // yo inject authorization middleware in the right order
+        // app.UseAuthentication();
         app.UseAuthorization();
+        // app.UseAuthentication();
+
+        app.MapGrpcService<FetcherskiService>();
         app.MapControllers();
-        app.UseHttpsRedirection();
+        // app.UseHttpsRedirection();
 
         return app.RunAsync();
     }

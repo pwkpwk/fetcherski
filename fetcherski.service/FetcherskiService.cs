@@ -21,4 +21,9 @@ public class FetcherskiService(ILogger<FetcherskiService> logger) : Fetcherski.F
             Age = Random.Shared.Next()
         });
     }
+
+    public override Task<FlipReply> Flip(FlipRequest request, ServerCallContext context)
+    {
+        return Task.FromResult(new FlipReply{ Flipped = Random.Shared.Next(2) == 1});
+    }
 }
