@@ -3,7 +3,14 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace fetcherski.service;
 
-[Authorize(nameof(GrpcAuthorization))]
+/// <summary>
+/// Implementation of the gRPC service Fetcherski declared in the fetcherski.grpc project.
+/// </summary>
+/// <param name="logger">Logger supplied by dependency injection.</param>
+/// <remarks>ASP.Net will apply authorization policy "GrpcTagRequirement" to all incoming gRPC requests,
+/// as is requested by the <see cref="AuthorizeAttribute"/> attribute. The policy is established in the
+/// AddAuthorization call i the service startup file, Program.cs.</remarks>
+[Authorize(nameof(GrpcTagRequirement))]
 public class FetcherskiService(ILogger<FetcherskiService> logger) : Fetcherski.FetcherskiBase
 {
     private static readonly EventId FetchEventId = new(1, nameof(Fetch));

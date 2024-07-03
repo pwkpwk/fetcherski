@@ -3,6 +3,16 @@ using Microsoft.AspNetCore.Authorization.Policy;
 
 namespace fetcherski.service;
 
+/// <summary>
+/// Handler of results of policy-based authorization of a received request.
+/// </summary>
+/// <param name="logger">Logger supplied by dependency injection.</param>
+/// <remarks>
+/// <para>The authorization infrastructure by itself does not fail incoming requests, it only records results of work
+/// of its parts. After the authorization has finished, a registered handler is called to apply authorization
+/// results to the request.</para>
+/// <para>This class fails requests with the 401 Unauthorized HTTP response.</para>
+/// </remarks>
 public class AuthorizationMiddlewareResultHandler(
     ILogger<AuthorizationMiddlewareResultHandler> logger) : IAuthorizationMiddlewareResultHandler
 {
@@ -28,7 +38,7 @@ public class AuthorizationMiddlewareResultHandler(
             return Task.CompletedTask;
         }
 
-        logger.LogTrace(AuthorizedEventId, "Authorized {endpoint}", context.GetEndpoint());
+        logger.LogTrace(AuthorizedEventId, "Allow authorized request {endpoint}", context.GetEndpoint());
         return next(context);
     }
 }

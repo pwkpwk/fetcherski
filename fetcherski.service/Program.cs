@@ -24,10 +24,15 @@ public static class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddScoped<IDatabase, CockroachDatabase>();
+        // Register the custom authorization provider as a disposable scoped object for illustration purposes only.
+        // In practice, an object like this won't build up any state that must be discarded after authorizing
+        // one incoming request.
         builder.Services.AddScoped<IAuthorization, DummyAuthorization>();
         builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationMiddlewareResultHandler>();
-        builder.Services.AddHttpContextAccessor();
         builder.Services.AddSingleton<IAuthorizationHandler, GrpcAuthorizationHandler>();
+        // Register a singleton IHttpContextAccessor object that can be used by any composed object
+        // to obtain the HTTP context associated with the current request.
+        builder.Services.AddHttpContextAccessor();
 
         var mvcConfig = builder.Services.AddControllers();
         mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DefaultController).Assembly));
@@ -35,10 +40,10 @@ public static class Program
         builder.Services.AddGrpc();
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy(nameof(GrpcAuthorization), policy =>
-            {
-                policy.AddRequirements(new GrpcAuthorization());
-            });
+            options.AddPolicy(
+                nameof(GrpcTagRequirement),
+                // Add GrpcTagRequirement with the requirement turned on to the policy "GrpcTagRequirement"
+                policy => policy.AddRequirements(new GrpcTagRequirement(TagRequired:true)));
         });
 
         var app = builder.Build();
