@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
-namespace fetcherski.service;
+namespace fetcherski.tools;
 
 /// <summary>
 /// Handler of results of policy-based authorization of a received request.

@@ -1,7 +1,9 @@
-﻿using fetcherski.tools;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace fetcherski.service;
+namespace fetcherski.tools;
 
 /// <summary>
 /// Implementation of <see cref="IAuthorizationHandler"/> registered in the dependency injection container.

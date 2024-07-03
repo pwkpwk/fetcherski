@@ -15,7 +15,7 @@ var client = new Fetcherski.FetcherskiClient(channel);
 var fetchReply = client.FetchAsync(
     new FetchRequest { Id = 1234 },
     new CallOptions(null, null, CancellationToken.None));
-Console.WriteLine(await fetchReply.ResponseAsync);
+Console.Out.WriteLine(await fetchReply.ResponseAsync);
 
 try
 {

@@ -1,4 +1,5 @@
-﻿using Grpc.Core;
+﻿using fetcherski.tools;
+using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 
 namespace fetcherski.service;

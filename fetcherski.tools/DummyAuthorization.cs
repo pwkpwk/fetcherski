@@ -8,7 +8,7 @@ public class DummyAuthorization(ILogger<DummyAuthorization> logger) : IAuthoriza
     private static readonly EventId UnauthorizedEventId = new(101, nameof(IAuthorization.AuthorizeAsync));
     private static readonly EventId EndOfLifeEventId = new(103, nameof(IAuthorization.AuthorizeAsync));
 
-    Task<bool> IAuthorization.AuthorizeAsync(string actionName, CancellationToken cancellationToken)
+    async Task<bool> IAuthorization.AuthorizeAsync(string actionName, CancellationToken cancellationToken)
     {
         bool authorized = actionName != "Unauthorized";
         if (authorized)
@@ -19,7 +19,10 @@ public class DummyAuthorization(ILogger<DummyAuthorization> logger) : IAuthoriza
         {
             logger.LogError(UnauthorizedEventId, "Unauthorized action '{actionName}'", actionName);
         }
-        return Task.FromResult(authorized);
+
+        await Task.Delay(100, cancellationToken);
+
+        return authorized;
     }
 
     public ValueTask DisposeAsync()

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace fetcherski.service;
+namespace fetcherski.tools;
 
 public record GrpcTagRequirement(bool TagRequired) : IAuthorizationRequirement;
