@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using CommunityToolkit.HighPerformance;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,38 +14,38 @@ namespace fetcherski.tools;
 /// <see cref="AuthorizationHandlerContext.Resource"/> property of the context parameter of the HandleRequirementAsync
 /// method.</param>
 /// <param name="logger">Logger supplied by dependency injection.</param>
-/// <remarks>
-/// <para>The <see cref="AuthorizationHandler{GrpcTagRequirement}"/> base class is a convenience helper for situations when
-/// the application uses only one custom requirement class. <see cref="GrpcAuthorizationHandler"/> is registered
-/// in the dependency injection container as the only implementation of <see cref="IAuthorizationHandler"/> and all
-/// policy-based authorization goes through the class.</para>
-/// <para>An alternative to the single <see cref="IAuthorizationHandler"/> innn the dependency injection container
-/// is the <see cref="IAuthorizationHandlerProvider"/> object that can implement custom logic for selection
-/// of a collection of authorization handlers for each request.</para> 
-/// </remarks>
 public class GrpcAuthorizationHandler(
     IHttpContextAccessor contextAccessor,
-    ILogger<GrpcAuthorizationHandler> logger) : AuthorizationHandler<GrpcTagRequirement>
+    ILogger<GrpcAuthorizationHandler> logger) : IAuthorizationHandler
 {
-    private static readonly EventId AuthorizedEventId = new(1, nameof(HandleRequirementAsync));
-    private static readonly EventId TagNotRequiredEventId = new(2, nameof(HandleRequirementAsync));
-    private static readonly EventId NoEndpointEventId = new(3, nameof(HandleRequirementAsync));
-    private static readonly EventId FailedEventId = new(4, nameof(HandleRequirementAsync));
-    private static readonly EventId UnavailableContextEventId = new(5, nameof(HandleRequirementAsync));
-    private static readonly EventId UnauthorizedEventId = new(6, nameof(HandleRequirementAsync));
-    private static readonly EventId NoProviderEventId = new(7, nameof(HandleRequirementAsync));
-
-    protected override async Task HandleRequirementAsync(
-        AuthorizationHandlerContext context,
-        GrpcTagRequirement requirement)
+    private enum LogEvent
     {
-        if (!requirement.TagRequired)
-        {
-            logger.LogTrace(TagNotRequiredEventId, "Tag is not required");
-            context.Succeed(requirement);
-            return;
-        }
+        Authorized,
+        TagNotRequired,
+        TokenNotRequired,
+        NoEndpoint,
+        Failed,
+        UnavailableContext,
+        Unauthorized,
+        NoProvider,
+        NoToken,
+        AuthorizationHeader,
+    }
 
+    private static EventId MakeEvent(LogEvent eventId) => new((int)eventId, nameof(IAuthorizationHandler.HandleAsync));
+    private static readonly EventId AuthorizedEventId = MakeEvent(LogEvent.Authorized);
+    private static readonly EventId TagNotRequiredEventId = MakeEvent(LogEvent.TagNotRequired);
+    private static readonly EventId TokenNotRequiredEventId = MakeEvent(LogEvent.TokenNotRequired);
+    private static readonly EventId NoEndpointEventId = MakeEvent(LogEvent.NoEndpoint);
+    private static readonly EventId FailedEventId = MakeEvent(LogEvent.Failed);
+    private static readonly EventId UnavailableContextEventId = MakeEvent(LogEvent.UnavailableContext);
+    private static readonly EventId UnauthorizedEventId = MakeEvent(LogEvent.Unauthorized);
+    private static readonly EventId NoProviderEventId = MakeEvent(LogEvent.NoProvider);
+    private static readonly EventId NoTokenEventId = MakeEvent(LogEvent.NoToken);
+    private static readonly EventId AuthorizationHeaderEventId = MakeEvent(LogEvent.AuthorizationHeader);
+
+    async Task IAuthorizationHandler.HandleAsync(AuthorizationHandlerContext context)
+    {
         var httpContext = context.Resource as HttpContext ?? contextAccessor.HttpContext;
 
         if (httpContext is null)
@@ -68,15 +69,6 @@ public class GrpcAuthorizationHandler(
             return;
         }
 
-        var grpcTag = endpoint.Metadata.GetMetadata<GrpcTagAttribute>();
-
-        if (grpcTag is null)
-        {
-            logger.LogInformation(FailedEventId, "Untagged method {method}", endpoint.DisplayName);
-            context.Fail(new AuthorizationFailureReason(this, "Untagged method"));
-            return;
-        }
-
         // If custom authorization is needed, and it almost always is needed at this point,
         // obtain the authorization service from the DI container and call it with data
         // from the attribute applied to the class method bound to the request.
@@ -97,7 +89,49 @@ public class GrpcAuthorizationHandler(
             return;
         }
 
-        bool authorized = await authorization.AuthorizeAsync(grpcTag.Name, httpContext.RequestAborted)
+        // Check requirements
+        foreach (var requirement in context.Requirements)
+        {
+            if (requirement is GrpcTagRequirement grpcTagRequirement)
+            {
+                await HandleTagRequirementAsync(context, httpContext, endpoint, authorization, grpcTagRequirement);
+            }
+            else if (requirement is GrpcKerbungleRequirement grpcKerbungleRequirement)
+            {
+                await HandleKerbungleRequirementAsync(context, httpContext, authorization, grpcKerbungleRequirement);
+            }
+
+            if (context.HasFailed)
+            {
+                break;
+            }
+        }
+    }
+
+    private async Task HandleTagRequirementAsync(
+        AuthorizationHandlerContext context,
+        HttpContext httpContext,
+        Endpoint endpoint,
+        IAuthorization authorization,
+        GrpcTagRequirement requirement)
+    {
+        if (!requirement.TagRequired)
+        {
+            logger.LogTrace(TagNotRequiredEventId, "Tag is not required");
+            context.Succeed(requirement);
+            return;
+        }
+
+        var grpcTag = endpoint.Metadata.GetMetadata<GrpcTagAttribute>();
+
+        if (grpcTag is null)
+        {
+            logger.LogInformation(FailedEventId, "Untagged method {method}", endpoint.DisplayName);
+            context.Fail(new AuthorizationFailureReason(this, "Untagged method"));
+            return;
+        }
+
+        bool authorized = await authorization.AuthorizeActionAsync(grpcTag.Action, httpContext.RequestAborted)
             .ConfigureAwait(ConfigureAwaitOptions.None);
 
         if (!authorized)
@@ -109,5 +143,68 @@ public class GrpcAuthorizationHandler(
 
         logger.LogInformation(AuthorizedEventId, "Authorized {endpoint}", endpoint.DisplayName);
         context.Succeed(requirement);
+    }
+
+    private async Task HandleKerbungleRequirementAsync(
+        AuthorizationHandlerContext context,
+        HttpContext httpContext,
+        IAuthorization authorization,
+        GrpcKerbungleRequirement requirement)
+    {
+        if (!requirement.KerbungleTokenRequired)
+        {
+            logger.LogTrace(TokenNotRequiredEventId, "Token is not required");
+            context.Succeed(requirement);
+            return;
+        }
+
+        foreach (var header in httpContext.Request.Headers.Authorization)
+        {
+            logger.LogDebug(AuthorizationHeaderEventId, "Authorization header: '{header}'", header);
+            string? token = RetrieveAuthorizationToken(header);
+
+            if (token is not null && await authorization.AuthorizeTokenAsync(token, httpContext.RequestAborted))
+            {
+                context.Succeed(requirement);
+                return;
+            }
+        }
+
+        logger.LogError(NoTokenEventId, "No valid token");
+        context.Fail(new AuthorizationFailureReason(this, "No valid token"));
+    }
+
+    private string? RetrieveAuthorizationToken(string? authorizationHeader)
+    {
+        if (authorizationHeader is null)
+        {
+            return null;
+        }
+
+        var kerbungle = "Kerbungle".AsSpan();
+        int i = 0;
+
+        foreach (var token in authorizationHeader.Tokenize(' '))
+        {
+            switch (i++)
+            {
+                case 0:
+                    if (!token.SequenceEqual(kerbungle))
+                    {
+                        return null;
+                    }
+
+                    break;
+
+                case 1:
+                    return token.ToString();
+                    break;
+
+                default:
+                    return null;
+            }
+        }
+
+        return null;
     }
 }

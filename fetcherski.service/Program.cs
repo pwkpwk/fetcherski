@@ -44,6 +44,10 @@ public static class Program
                 nameof(GrpcTagRequirement),
                 // Add GrpcTagRequirement with the requirement turned on to the policy "GrpcTagRequirement"
                 policy => policy.AddRequirements(new GrpcTagRequirement(TagRequired:true)));
+            options.AddPolicy(
+                nameof(GrpcKerbungleRequirement),
+                // Add GrpcKerbungleRequirement with the requirement turned on to the policy "GrpcKerbungleRequirement"
+                policy => policy.AddRequirements(new GrpcKerbungleRequirement(KerbungleTokenRequired:true)));
         });
 
         var app = builder.Build();
@@ -63,7 +67,7 @@ public static class Program
         app.UseAuthorization();
         // app.UseAuthentication();
 
-        app.MapGrpcService<FetcherskiService>();
+        app.MapGrpcService<GrpcFetcherskiService>();
         app.MapControllers();
         // app.UseHttpsRedirection();
 

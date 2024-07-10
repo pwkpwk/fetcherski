@@ -27,7 +27,7 @@ public class FetcherskiAuthorizationAttribute(string? Name = null) : ActionFilte
             logger.LogError(BadRequestEventId, "Unspecified action name");
             context.Result = new BadRequestResult();
         }
-        else if (!await authorization.AuthorizeAsync(actionName, context.HttpContext.RequestAborted))
+        else if (!await authorization.AuthorizeActionAsync(actionName, context.HttpContext.RequestAborted))
         {
             logger.LogError(UnauthorizedEventId, "Failed to authorize action '{actionName}'", actionName);
             context.Result = new UnauthorizedResult();

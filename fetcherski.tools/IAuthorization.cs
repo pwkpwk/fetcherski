@@ -2,5 +2,7 @@
 
 public interface IAuthorization
 {
-    Task<bool> AuthorizeAsync(string actionName, CancellationToken cancellationToken);
+    Task<bool> AuthorizeActionAsync(string actionName, CancellationToken cancellationToken);
+
+    Task<bool> AuthorizeTokenAsync(string token, CancellationToken cancellationToken);
 }

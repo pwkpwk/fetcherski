@@ -5,17 +5,34 @@ using Microsoft.AspNetCore.Authorization;
 namespace fetcherski.service;
 
 /// <summary>
-/// Implementation of the gRPC service Fetcherski declared in the fetcherski.grpc project.
+/// API controller that implements the Fetcherski gRPC service contract defined in the fetcherski.grpc project.
 /// </summary>
 /// <param name="logger">Logger supplied by dependency injection.</param>
-/// <remarks>ASP.Net will apply authorization policy "GrpcTagRequirement" to all incoming gRPC requests,
+/// <remarks><para>ASP.Net will apply authorization policy "GrpcTagRequirement" to all incoming gRPC requests,
 /// as is requested by the <see cref="AuthorizeAttribute"/> attribute. The policy is established in the
-/// AddAuthorization call i the service startup file, Program.cs.</remarks>
+/// AddAuthorization call i the service startup file, Program.cs.</para>
+/// <para>ASP.Net combines all requirements from all policies into one collection that it passes to one call
+/// <see cref="IAuthorizationHandler.HandleAsync"/></para>.
+/// <para>After all authorization handlers have finished, one
+/// authorization middleware request handler renders the result by letting the request through the rest of the
+/// middleware chain or by failing it.</para>
+/// <para>It is on the developer to not apply contradicting requirements to gRPC and HTTP API controllers.</para></remarks>
+/// <seealso cref="AuthorizationMiddlewareResultHandler"/>
 [Authorize(nameof(GrpcTagRequirement))]
-public class FetcherskiService(ILogger<FetcherskiService> logger) : Fetcherski.FetcherskiBase
+[Authorize(nameof(GrpcKerbungleRequirement))]
+public class GrpcFetcherskiService(ILogger<GrpcFetcherskiService> logger) : Fetcherski.FetcherskiBase
 {
     private static readonly EventId FetchEventId = new(1, nameof(Fetch));
 
+    /// <summary>
+    /// Implementation of the Fetcherski.Fetch gRPC contract.
+    /// </summary>
+    /// <remarks>
+    /// The <see cref="GrpcTagAttribute"/> attribute is checked by <see cref="GrpcAuthorizationHandler"/> if the
+    /// <see cref="GrpcTagRequirement"/> requirement is present in the collection of requirements passed to
+    /// <see cref="IAuthorizationHandler.HandleAsync"/>, that examines metadata of the .Net method bound to the
+    /// HTTP endpoint that processes the received gRPC request.
+    /// </remarks>
     [GrpcTag("Wormwood")]
     public override Task<FetchReply> Fetch(FetchRequest request, ServerCallContext context)
     {
