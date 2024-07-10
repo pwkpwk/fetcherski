@@ -33,9 +33,12 @@ public class TokenGenerationBenchmarkTests
 
         Assert.That(summary.Reports[0].Success, Is.True);
         Assert.That(summary.Reports[1].Success, Is.True);
-        Assert.That(summary.Reports[0].BenchmarkCase.Descriptor.Baseline, Is.True);
-        Assert.That(summary.Reports[1].BenchmarkCase.Descriptor.Baseline, Is.False);
-        Assert.That(summary.Reports[1].ResultStatistics.Mean, Is.LessThan(summary.Reports[0].ResultStatistics.Mean));
+        Assert.Multiple(() =>
+        {
+            Assert.That(summary.Reports[0].BenchmarkCase.Descriptor.Baseline, Is.True);
+            Assert.That(summary.Reports[1].BenchmarkCase.Descriptor.Baseline, Is.False);
+            Assert.That(summary.Reports[1].ResultStatistics!.Mean, Is.LessThan(summary.Reports[0].ResultStatistics!.Mean));
+        });
     }
 
     public class Config : DebugConfig
