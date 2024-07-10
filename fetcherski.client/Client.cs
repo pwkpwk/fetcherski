@@ -1,6 +1,8 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace fetcherski.client;
 
@@ -22,6 +24,24 @@ public class Client(Uri baseUri)
         using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
 
         return $"{(int)response.StatusCode} {response.StatusCode}";
+    }
+
+    public async Task<JsonObject?> GetPlopAsync(CancellationToken cancellationToken)
+    {
+        using var client = new HttpClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, baseUri + "api/plop");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Kerbungle", "Token");
+
+        using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var node = await JsonNode.ParseAsync(
+            stream,
+            null,
+            new JsonDocumentOptions { MaxDepth = 16, AllowTrailingCommas = true },
+            cancellationToken);
+        
+        return node as JsonObject;
     }
 
     private class Enumerable(

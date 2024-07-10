@@ -1,4 +1,13 @@
 ﻿# @name Unauthorized
 GET http://localhost:5126/api/unauthorized
+###
 
+# @name Plop
+GET http://localhost:5126/api/plop
+Authorization: Kerbungle Token
+###
+
+# @name Unauthorized Plop
+GET http://localhost:5126/api/plop
+Authorization: Bearer Token
 ###

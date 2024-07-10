@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.grpc", "fetchers
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fetcherski.grpcclient", "fetcherski.grpcclient\fetcherski.grpcclient.csproj", "{7FBA113C-0E89-4733-84AD-4923171EDACD}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fetcherski.controllers.fs", "fetcherski.controllers.fs\fetcherski.controllers.fs.fsproj", "{719ECB19-2DD2-4152-8D0D-7A453FA34046}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -66,5 +68,9 @@ Global
 		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FBA113C-0E89-4733-84AD-4923171EDACD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{719ECB19-2DD2-4152-8D0D-7A453FA34046}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{719ECB19-2DD2-4152-8D0D-7A453FA34046}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{719ECB19-2DD2-4152-8D0D-7A453FA34046}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{719ECB19-2DD2-4152-8D0D-7A453FA34046}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

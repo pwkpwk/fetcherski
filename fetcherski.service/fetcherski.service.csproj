@@ -18,6 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\fetcherski.controllers.fs\fetcherski.controllers.fs.fsproj" />
       <ProjectReference Include="..\fetcherski.controllers\fetcherski.controllers.csproj" />
       <ProjectReference Include="..\fetcherski.database\fetcherski.database.csproj" />
       <ProjectReference Include="..\fetcherski.grpc\fetcherski.grpc.csproj" />

@@ -1,4 +1,5 @@
 using fetcherski.controllers;
+using fetcherski.controllers.fs;
 using fetcherski.database;
 using fetcherski.database.Configuration;
 using fetcherski.tools;
@@ -36,6 +37,7 @@ public static class Program
 
         var mvcConfig = builder.Services.AddControllers();
         mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DefaultController).Assembly));
+        mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(SupplementalController).Assembly));
 
         builder.Services.AddGrpc();
         builder.Services.AddAuthorization(options =>

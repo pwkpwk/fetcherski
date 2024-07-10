@@ -5,6 +5,7 @@ using fetcherski.tools;
 var client = new Client(new Uri("http://localhost:5126/"));
 
 Console.WriteLine($"UnauthorizedAsync: {await client.CallUnauthorizedAsync(CancellationToken.None)}");
+Console.WriteLine($"Plop = {await client.GetPlopAsync(CancellationToken.None)}");
 
 Console.WriteLine("FORWARD:");
 await PrintItems(client, new ItemsOrder(true));
