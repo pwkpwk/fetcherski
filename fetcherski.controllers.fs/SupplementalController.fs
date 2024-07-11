@@ -7,7 +7,7 @@ open Microsoft.AspNetCore.Mvc
 open fetcherski.tools
 
 [<Route("api")>]
-[<Authorize(nameof GrpcKerbungleRequirement)>]
+[<Authorize(nameof KerbungleRequirement)>]
 type SupplementalController() =
     inherit Controller()
 

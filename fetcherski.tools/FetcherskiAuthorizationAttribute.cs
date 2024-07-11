@@ -17,7 +17,7 @@ public class FetcherskiAuthorizationAttribute(string? Name = null) : ActionFilte
 
     public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        var authorization = GetService<IAuthorization>(context);
+        var authorization = GetService<IFetcherskiAuthorization>(context);
         var logger = GetService<ILogger<FetcherskiAuthorizationAttribute>>(context);
 
         string? actionName = Name ?? context.ActionDescriptor.RouteValues["action"];

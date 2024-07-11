@@ -1,6 +1,6 @@
 ﻿namespace fetcherski.tools;
 
-public interface IAuthorization
+public interface IFetcherskiAuthorization
 {
     Task<bool> AuthorizeActionAsync(string actionName, CancellationToken cancellationToken);
 

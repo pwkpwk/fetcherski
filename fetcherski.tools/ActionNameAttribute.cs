@@ -1,6 +1,6 @@
 ﻿namespace fetcherski.tools;
 
-public class GrpcTagAttribute(string action) : Attribute
+public class ActionNameAttribute(string action) : Attribute
 {
     public string Action => action;
 }

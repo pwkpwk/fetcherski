@@ -20,7 +20,6 @@ public class AuthorizationMiddlewareResultHandler(
 {
     private static readonly EventId AuthorizedEventId = new(1, nameof(IAuthorizationMiddlewareResultHandler.HandleAsync));
     private static readonly EventId UnauthorisedEventId = new(2, nameof(IAuthorizationMiddlewareResultHandler.HandleAsync));
-    private static readonly EventId RequirementEventId = new(3, nameof(IAuthorizationMiddlewareResultHandler.HandleAsync));
 
     Task IAuthorizationMiddlewareResultHandler.HandleAsync(
         RequestDelegate next,
@@ -30,17 +29,12 @@ public class AuthorizationMiddlewareResultHandler(
     {
         if (!authorizeResult.Succeeded)
         {
-            foreach (var requirement in policy.Requirements)
-            {
-                logger.LogError(RequirementEventId, "Unsatisfied policy requirement {requirement}", requirement);
-            }
-
-            logger.LogError(UnauthorisedEventId, "Unauthorized {endpoint}", context.GetEndpoint());
+            logger.LogError(UnauthorisedEventId, "Unauthorized {Endpoint}", context.GetEndpoint());
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return Task.CompletedTask;
         }
 
-        logger.LogTrace(AuthorizedEventId, "Allow authorized request {endpoint}", context.GetEndpoint());
+        logger.LogTrace(AuthorizedEventId, "Allow authorized request {Endpoint}", context.GetEndpoint());
         return next(context);
     }
 }

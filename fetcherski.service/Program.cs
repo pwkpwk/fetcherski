@@ -28,9 +28,13 @@ public static class Program
         // Register the custom authorization provider as a disposable scoped object for illustration purposes only.
         // In practice, an object like this won't build up any state that must be discarded after authorizing
         // one incoming request.
-        builder.Services.AddScoped<IAuthorization, DummyAuthorization>();
+        builder.Services.AddScoped<IFetcherskiAuthorization, DummyFetcherskiAuthorization>();
+        
+        // Main authorization handler called by the authorization middleware inserted by app.UseAuthorization below.  
+        builder.Services.AddSingleton<IAuthorizationHandler, FetcherskiAuthorizationHandler>();
+        // Handler of results of authorization produced by FetcherskiAuthorizationHandler registered above.
         builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, AuthorizationMiddlewareResultHandler>();
-        builder.Services.AddSingleton<IAuthorizationHandler, GrpcAuthorizationHandler>();
+        
         // Register a singleton IHttpContextAccessor object that can be used by any composed object
         // to obtain the HTTP context associated with the current request.
         builder.Services.AddHttpContextAccessor();
@@ -43,13 +47,13 @@ public static class Program
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy(
-                nameof(GrpcTagRequirement),
-                // Add GrpcTagRequirement with the requirement turned on to the policy "GrpcTagRequirement"
-                policy => policy.AddRequirements(new GrpcTagRequirement(TagRequired:true)));
+                nameof(ActionNameRequirement), // Policy name used in the Authorize attribute applied to API controllers
+                // Add ActionNameRequirement with the requirement turned on to the policy "ActionNameRequirement"
+                policy => policy.AddRequirements(new ActionNameRequirement(TagRequired: true)));
             options.AddPolicy(
-                nameof(GrpcKerbungleRequirement),
-                // Add GrpcKerbungleRequirement with the requirement turned on to the policy "GrpcKerbungleRequirement"
-                policy => policy.AddRequirements(new GrpcKerbungleRequirement(KerbungleTokenRequired:true)));
+                nameof(KerbungleRequirement), // Policy name used in the Authorize attribute applied to API controllers
+                // Add KerbungleRequirement with the requirement turned on to the policy "KerbungleRequirement"
+                policy => policy.AddRequirements(new KerbungleRequirement(KerbungleTokenRequired: true)));
         });
 
         var app = builder.Build();
@@ -62,12 +66,15 @@ public static class Program
         }
 
         app.UseRouting();
+
+        // Authentication is not needed here, but it can be used to add information about the calling user
+        // to the request context.
+        // app.UseAuthentication();
         
         // UseAuthentication & UseAuthorization must be placed between UseRouting and MapControllers
         // yo inject authorization middleware in the right order
         // app.UseAuthentication();
         app.UseAuthorization();
-        // app.UseAuthentication();
 
         app.MapGrpcService<GrpcFetcherskiService>();
         app.MapControllers();

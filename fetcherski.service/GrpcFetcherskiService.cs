@@ -18,8 +18,8 @@ namespace fetcherski.service;
 /// middleware chain or by failing it.</para>
 /// <para>It is on the developer to not apply contradicting requirements to gRPC and HTTP API controllers.</para></remarks>
 /// <seealso cref="AuthorizationMiddlewareResultHandler"/>
-[Authorize(nameof(GrpcTagRequirement))]
-[Authorize(nameof(GrpcKerbungleRequirement))]
+[Authorize(nameof(ActionNameRequirement))]
+[Authorize(nameof(KerbungleRequirement))]
 public class GrpcFetcherskiService(ILogger<GrpcFetcherskiService> logger) : Fetcherski.FetcherskiBase
 {
     private static readonly EventId FetchEventId = new(1, nameof(Fetch));
@@ -28,12 +28,12 @@ public class GrpcFetcherskiService(ILogger<GrpcFetcherskiService> logger) : Fetc
     /// Implementation of the Fetcherski.Fetch gRPC contract.
     /// </summary>
     /// <remarks>
-    /// The <see cref="GrpcTagAttribute"/> attribute is checked by <see cref="GrpcAuthorizationHandler"/> if the
-    /// <see cref="GrpcTagRequirement"/> requirement is present in the collection of requirements passed to
+    /// The <see cref="ActionNameAttribute"/> attribute is checked by <see cref="FetcherskiAuthorizationHandler"/> if the
+    /// <see cref="ActionNameRequirement"/> requirement is present in the collection of requirements passed to
     /// <see cref="IAuthorizationHandler.HandleAsync"/>, that examines metadata of the .Net method bound to the
     /// HTTP endpoint that processes the received gRPC request.
     /// </remarks>
-    [GrpcTag("Wormwood")]
+    [ActionName("Wormwood")]
     public override Task<FetchReply> Fetch(FetchRequest request, ServerCallContext context)
     {
         logger.LogInformation(FetchEventId, "id={requestId}", request.Id);
