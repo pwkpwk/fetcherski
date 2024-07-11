@@ -1,39 +1,36 @@
 ﻿namespace fetcherski.controllers.fs
 
 open System
-open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Mvc
+open Microsoft.Extensions.Logging
 open fetcherski.tools
 
 /// ASP.Net API controller written in F# only to demonstrate how to write asynchronous action methods.
-[<Route("api")>]
+[<Route("api/mafia")>]
 [<Authorize(nameof KerbungleRequirement)>]
-type SupplementalController() =
+type SupplementalController(logger: ILogger<SupplementalController>) =
     inherit Controller()
 
-    let makeLongPlopAsync ct =
+    // Parentheses are needed because all C# functions in F# take arguments as tuples
+    static let PlopEventId = EventId(1, nameof SupplementalController)
+
+    let rec makeDonAsync (donName: string) (delay: int) ct =
+        logger.LogTrace(PlopEventId, "{member} | donName={donName}, delay={delay}", nameof makeDonAsync, donName, delay)
+
         task {
-            do! Task.Delay(100, ct)
+            do! Task.Delay(delay, ct)
             // Return is ceremoniously needed in asynchronous computation expressions.
             // The returned value is the task result, and it is cast to the interface IActionResult implemented
             // by all ASP.Net action result classes. The casting is not necessary unless several different expressions
             // may produce results for a single action method.
-            return JsonResult({| Don = "Pedro" |}) :> IActionResult
+            return JsonResult({| Don = donName |}) :> IActionResult
         }
 
-    let makeShortPlopAsync ct =
-        task {
-            do! Task.Delay(10, ct)
-            // Return is ceremoniously needed in asynchronous computation expressions.
-            // The returned value is the task result, and it is cast to the interface IActionResult implemented
-            // by all ASP.Net action result classes. The casting is not necessary unless several different expressions
-            // may produce results for a single action method.
-            return JsonResult({| Don = "Julio" |}) :> IActionResult
-        }
-
-    [<Route("plop")>]
+    [<Route("don")>]
     [<HttpGet>]
-    member this.GetPlopAsync(ct: CancellationToken) =
-        if Random.Shared.Next 2 = 1 then makeShortPlopAsync ct else makeLongPlopAsync ct
+    member this.GetDonAsync ct =
+        match Random.Shared.Next 2 with
+        | 1 -> makeDonAsync "Pedro" 100 ct
+        | _ -> makeDonAsync "Julio" 50 ct

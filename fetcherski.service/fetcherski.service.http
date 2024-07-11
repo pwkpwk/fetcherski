@@ -1,6 +1,12 @@
 @fetcherski.service_HostAddress = http://localhost:5126
 
-GET {{fetcherski.service_HostAddress}}/weatherforecast/
+# @name Don | authorized
+GET {{fetcherski.service_HostAddress}}/api/mafia/don
 Accept: application/json
+Authorization: Kerbungle token
+###
 
+# @name Don | unauthorized
+GET {{fetcherski.service_HostAddress}}/api/mafia/don
+Accept: application/json
 ###
