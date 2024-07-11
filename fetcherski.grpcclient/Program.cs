@@ -24,15 +24,15 @@ var channel = GrpcChannel.ForAddress(
 
 var client = new Fetcherski.FetcherskiClient(channel);
 
-var fetchReply = client.FetchAsync(
+var fetchReply = await client.FetchAsync(
     new FetchRequest { Id = 1234 },
     new CallOptions(null, null, CancellationToken.None));
-Console.Out.WriteLine(await fetchReply.ResponseAsync);
+Console.Out.WriteLine(fetchReply);
 
 try
 {
     var flipReply = await client.FlipAsync(new FlipRequest(), new CallOptions(null, null, CancellationToken.None));
-    Console.WriteLine($"Flipped = {flipReply.Flipped}");
+    Console.WriteLine($"Flipped = {flipReply}");
 }
 catch (Exception ex)
 {
@@ -41,7 +41,7 @@ catch (Exception ex)
 
 return 0;
 
-ValueTask<string> ObtainToken(CancellationToken cancellationToken)
+ValueTask<string> ObtainToken(CancellationToken _)
 {
     return ValueTask.FromResult("Token");
 }

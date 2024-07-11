@@ -36,8 +36,8 @@ public class GrpcFetcherskiService(ILogger<GrpcFetcherskiService> logger) : Fetc
     [ActionName("Wormwood")]
     public override Task<FetchReply> Fetch(FetchRequest request, ServerCallContext context)
     {
-        logger.LogInformation(FetchEventId, "id={requestId}", request.Id);
-        
+        logger.LogInformation(FetchEventId, "id={RequestId}", request.Id);
+
         return Task.FromResult(new FetchReply
         {
             Id = request.Id,
@@ -47,8 +47,10 @@ public class GrpcFetcherskiService(ILogger<GrpcFetcherskiService> logger) : Fetc
         });
     }
 
-    public override Task<FlipReply> Flip(FlipRequest request, ServerCallContext context)
-    {
-        return Task.FromResult(new FlipReply{ Flipped = Random.Shared.Next(2) == 1});
-    }
+    public override Task<FlipReply> Flip(FlipRequest request, ServerCallContext context) =>
+        Task.FromResult(new FlipReply
+        {
+            Flipped = Random.Shared.Next(2) == 1,
+            Times = Random.Shared.Next(25)
+        });
 }

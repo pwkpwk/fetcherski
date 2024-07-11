@@ -21,4 +21,5 @@ message FlipRequest {
 
 message FlipReply {
   bool flipped = 20;
+  int32 times = 25;
 }
