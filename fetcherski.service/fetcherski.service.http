@@ -1,12 +1,16 @@
 @fetcherski.service_HostAddress = http://localhost:5126
 
-# @name Don | authorized
+# @name F# | Don | authorized
 GET {{fetcherski.service_HostAddress}}/api/mafia/don
 Accept: application/json
 Authorization: Kerbungle token
 ###
 
-# @name Don | unauthorized
+# @name F# | Don | unauthorized
 GET {{fetcherski.service_HostAddress}}/api/mafia/don
 Accept: application/json
+###
+
+# @name C# | Unauthorized
+GET {{fetcherski.service_HostAddress}}/api/unauthorized
 ###
