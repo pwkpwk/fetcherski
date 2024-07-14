@@ -44,6 +44,10 @@ public static class Program
         mvcConfig.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(SupplementalController).Assembly));
 
         builder.Services.AddGrpc();
+        builder.Services.AddAuthentication(KerbungleAuthenticationOptions.Scheme)
+            .AddScheme<KerbungleAuthenticationOptions, KerbungleAuthentication>(
+                KerbungleAuthenticationOptions.Scheme,
+                KerbungleAuthenticationOptions.Configure);
         builder.Services.AddAuthorization(options =>
         {
             options.AddPolicy(

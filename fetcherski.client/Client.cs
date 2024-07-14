@@ -26,22 +26,26 @@ public class Client(Uri baseUri)
         return $"{(int)response.StatusCode} {response.StatusCode}";
     }
 
-    public async Task<JsonObject?> GetPlopAsync(CancellationToken cancellationToken)
+    public async Task<JsonObject?> GetDonAsync(CancellationToken cancellationToken)
     {
         using var client = new HttpClient();
-        using var request = new HttpRequestMessage(HttpMethod.Get, baseUri + "api/plop");
+        using var request = new HttpRequestMessage(HttpMethod.Get, baseUri + "api/mafia/don");
         request.Headers.Authorization = new AuthenticationHeaderValue("Kerbungle", "Token");
 
         using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(ConfigureAwaitOptions.None);
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var node = await JsonNode.ParseAsync(
-            stream,
-            null,
-            new JsonDocumentOptions { MaxDepth = 16, AllowTrailingCommas = true },
-            cancellationToken);
-        
-        return node as JsonObject;
+        if (response.IsSuccessStatusCode)
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var node = await JsonNode.ParseAsync(
+                stream,
+                null,
+                new JsonDocumentOptions { MaxDepth = 16, AllowTrailingCommas = true },
+                cancellationToken);
+            return node as JsonObject;
+        }
+
+        throw new Exception(response.ReasonPhrase);
     }
 
     private class Enumerable(

@@ -1,5 +1,4 @@
-﻿using CommunityToolkit.HighPerformance;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,7 @@ namespace fetcherski.tools;
 /// <summary>
 /// Implementation of <see cref="IAuthorizationHandler"/> registered in the dependency injection container.
 /// </summary>
-/// <param name="httpContextAccessor">Optional helper, supplied by dependency injection, that obtains
+/// <param name="contextAccessor">Optional helper, supplied by dependency injection, that obtains
 /// the HTTP context of the authorising request. The same context is available from the
 /// <see cref="AuthorizationHandlerContext.Resource"/> property of the context parameter of the HandleRequirementAsync
 /// method.</param>
@@ -26,10 +25,10 @@ public class FetcherskiAuthorizationHandler(
         NoEndpoint,
         Failed,
         UnavailableContext,
+        Unauthenticated,
         Unauthorized,
         NoProvider,
-        NoToken,
-        AuthorizationHeader,
+        UnsatisfiedRequirement,
     }
 
     private static EventId MakeEvent(LogEvent eventId) => new((int)eventId, $"{nameof(IAuthorizationHandler.HandleAsync)}.{eventId}");
@@ -39,10 +38,10 @@ public class FetcherskiAuthorizationHandler(
     private static readonly EventId NoEndpointEventId = MakeEvent(LogEvent.NoEndpoint);
     private static readonly EventId FailedEventId = MakeEvent(LogEvent.Failed);
     private static readonly EventId UnavailableContextEventId = MakeEvent(LogEvent.UnavailableContext);
+    private static readonly EventId UnauthenticatedEventId = MakeEvent(LogEvent.Unauthenticated);
     private static readonly EventId UnauthorizedEventId = MakeEvent(LogEvent.Unauthorized);
     private static readonly EventId NoProviderEventId = MakeEvent(LogEvent.NoProvider);
-    private static readonly EventId NoTokenEventId = MakeEvent(LogEvent.NoToken);
-    private static readonly EventId AuthorizationHeaderEventId = MakeEvent(LogEvent.AuthorizationHeader);
+    private static readonly EventId UnsatisfiedRequirementEventId = MakeEvent(LogEvent.UnsatisfiedRequirement);
 
     async Task IAuthorizationHandler.HandleAsync(AuthorizationHandlerContext context)
     {
@@ -98,12 +97,22 @@ public class FetcherskiAuthorizationHandler(
             }
             else if (requirement is KerbungleRequirement grpcKerbungleRequirement)
             {
-                await ProcessKerbungleRequirementAsync(context, httpContext, authorization, grpcKerbungleRequirement);
+                ProcessKerbungleRequirementAsync(context, endpoint, grpcKerbungleRequirement);
             }
 
             if (context.HasFailed)
             {
                 break;
+            }
+        }
+
+        if (!context.HasFailed)
+        {
+            foreach (var requirement in context.PendingRequirements)
+            {
+                string requirementType = requirement.GetType().Name;
+                logger.LogError(UnsatisfiedRequirementEventId, "Unsatisfied requirement {requirement}", requirementType);
+                context.Fail(new AuthorizationFailureReason(this, $"Unsatisfied requirement {requirementType}"));
             }
         }
     }
@@ -147,10 +156,9 @@ public class FetcherskiAuthorizationHandler(
         context.Succeed(requirement);
     }
 
-    private async Task ProcessKerbungleRequirementAsync(
+    private void ProcessKerbungleRequirementAsync(
         AuthorizationHandlerContext context,
-        HttpContext httpContext,
-        IFetcherskiAuthorization fetcherskiAuthorization,
+        Endpoint endpoint,
         KerbungleRequirement requirement)
     {
         if (!requirement.KerbungleTokenRequired)
@@ -160,52 +168,22 @@ public class FetcherskiAuthorizationHandler(
             return;
         }
 
-        foreach (var header in httpContext.Request.Headers.Authorization)
+        foreach (var identity in context.User.Identities)
         {
-            logger.LogDebug(AuthorizationHeaderEventId, "Authorization header: '{header}'", header);
-
-            if (!string.IsNullOrWhiteSpace(header))
+            if (KerbungleAuthenticationOptions.Scheme.Equals(identity.AuthenticationType,
+                    StringComparison.InvariantCultureIgnoreCase)
+                && identity.IsAuthenticated)
             {
-                // Retrieve the token of the type 'Kerbungle' from the Authorization header (the second word in the string
-                // with the first word 'Kerbungle')
-                string? token = RetrieveAuthorizationToken(header, "Kerbungle".AsSpan());
-
-                if (token is not null && await fetcherskiAuthorization.AuthorizeTokenAsync(token, httpContext.RequestAborted))
-                {
-                    context.Succeed(requirement);
-                    return;
-                }
+                logger.LogInformation(AuthorizedEventId, "Authorized '{name}' | {endpoint}",
+                    identity.Name, endpoint.DisplayName);
+                context.Succeed(requirement);
             }
         }
 
-        logger.LogError(NoTokenEventId, "No valid token");
-        context.Fail(new AuthorizationFailureReason(this, "No valid token"));
-    }
-
-    private string? RetrieveAuthorizationToken(string authorizationHeader, ReadOnlySpan<char> type)
-    {
-        int i = 0;
-
-        foreach (var token in authorizationHeader.Tokenize(' '))
+        if (!context.HasSucceeded)
         {
-            switch (i++)
-            {
-                case 0:
-                    if (!token.SequenceEqual(type))
-                    {
-                        return null;
-                    }
-
-                    break;
-
-                case 1:
-                    return token.ToString();
-
-                default:
-                    return null;
-            }
+            logger.LogError(UnauthenticatedEventId, "Unauthenticated caller {endpoint}", endpoint);
+            context.Fail(new AuthorizationFailureReason(this, "Unauthenticated caller"));
         }
-
-        return null;
     }
 }
